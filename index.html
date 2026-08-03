@@ -278,7 +278,30 @@
       min-width: 0;
       min-height: 140px;
       overflow: hidden;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Duplicate Flash Animation */
+    .code-card.duplicate-highlight {
+      animation: pulseHighlight 0.6s ease-in-out 2;
+    }
+
+    @keyframes pulseHighlight {
+      0% {
+        border-color: #e53e3e;
+        box-shadow: 0 0 12px rgba(229, 62, 62, 0.6);
+        transform: scale(1);
+      }
+      50% {
+        border-color: #e53e3e;
+        box-shadow: 0 0 18px rgba(229, 62, 62, 0.9);
+        transform: scale(1.04);
+      }
+      100% {
+        border-color: #dcdfe6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transform: scale(1);
+      }
     }
 
     /* SVG styling for Barcodes */
@@ -550,6 +573,23 @@
     let savedCodes = [];
     let savedFavorites = [];
 
+    // Helper: Check if duplicate exists and highlight it
+    function isDuplicate(type, value) {
+      const existing = savedCodes.find(item => item.type === type && item.value.toLowerCase() === value.toLowerCase());
+      if (existing) {
+        const cardElem = document.querySelector(`.code-card[data-id="${existing.id}"]`);
+        if (cardElem) {
+          cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          cardElem.classList.remove('duplicate-highlight');
+          // Force reflow for animation restart
+          void cardElem.offsetWidth;
+          cardElem.classList.add('duplicate-highlight');
+        }
+        return true;
+      }
+      return false;
+    }
+
     // Helper: Save current state to Local Storage
     function saveToLocalStorage() {
       localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
@@ -635,19 +675,17 @@
 
     // Toggle Favorite function
     function toggleFavorite(id, type, value, favBtn) {
-      const index = savedFavorites.findIndex(fav => fav.type === type && fav.value === value);
+      const index = savedFavorites.findIndex(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
       
       if (index > -1) {
         // Remove from favorites
         savedFavorites.splice(index, 1);
         favBtn.classList.remove('is-fav');
-        favBtn.innerHTML = '♥'; // outline/regular
         favBtn.title = 'Add to Favorites';
       } else {
         // Add to favorites
         savedFavorites.push({ type, value });
         favBtn.classList.add('is-fav');
-        favBtn.innerHTML = '♥';
         favBtn.title = 'Remove from Favorites';
       }
 
@@ -662,7 +700,7 @@
 
     // Check if an item is favorited
     function checkIsFavorited(type, value) {
-      return savedFavorites.some(fav => fav.type === type && fav.value === value);
+      return savedFavorites.some(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
     }
 
     // Render function for cards
@@ -794,6 +832,12 @@
       }
 
       const targetType = textValue.toLowerCase() === 'chuck testa' ? 'chuck' : codeType;
+
+      // Duplicate check
+      if (isDuplicate(targetType, textValue)) {
+        return;
+      }
+
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
       const isFav = checkIsFavorited(targetType, textValue);
       const success = renderCodeCard(id, targetType, textValue, isFav);
@@ -813,16 +857,22 @@
       const codes = ['05021/123', '05019/123', '05022/123'];
       
       codes.forEach((codeValue, index) => {
-        const barcodeId = (Date.now() + index).toString() + '-b';
-        const bFav = checkIsFavorited('barcode', codeValue);
-        if (renderCodeCard(barcodeId, 'barcode', codeValue, bFav)) {
-          savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue, isFav: bFav });
+        // Handle barcode
+        if (!isDuplicate('barcode', codeValue)) {
+          const barcodeId = (Date.now() + index).toString() + '-b';
+          const bFav = checkIsFavorited('barcode', codeValue);
+          if (renderCodeCard(barcodeId, 'barcode', codeValue, bFav)) {
+            savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue, isFav: bFav });
+          }
         }
 
-        const qrId = (Date.now() + index).toString() + '-q';
-        const qFav = checkIsFavorited('qrcode', codeValue);
-        if (renderCodeCard(qrId, 'qrcode', codeValue, qFav)) {
-          savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue, isFav: qFav });
+        // Handle QR code
+        if (!isDuplicate('qrcode', codeValue)) {
+          const qrId = (Date.now() + index).toString() + '-q';
+          const qFav = checkIsFavorited('qrcode', codeValue);
+          if (renderCodeCard(qrId, 'qrcode', codeValue, qFav)) {
+            savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue, isFav: qFav });
+          }
         }
       });
 
@@ -837,9 +887,11 @@
       }
 
       savedFavorites.forEach((fav, index) => {
-        const id = (Date.now() + index).toString() + '-fav';
-        if (renderCodeCard(id, fav.type, fav.value, true)) {
-          savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
+        if (!isDuplicate(fav.type, fav.value)) {
+          const id = (Date.now() + index).toString() + '-fav';
+          if (renderCodeCard(id, fav.type, fav.value, true)) {
+            savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
+          }
         }
       });
 
