@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barcode & QR Code Generator</title>
+  
+  <!-- JsBarcode Library for standard barcodes -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <!-- QRCode.js Library for QR codes -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f8;
+      padding: 30px 20px;
+      margin: 0 auto;
+      max-width: 1600px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 24px;
+    }
+
+    /* Top Input Bar Layout */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin: 0 auto 32px auto;
+      max-width: 600px;
+    }
+
+    /* Input Wrapper for inline Clear Icon */
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 14px 40px 14px 16px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper input:focus {
+      border-color: #0066cc;
+    }
+
+    /* Clear Input ('×') Icon */
+    .clear-input-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #999;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0 6px;
+      line-height: 1;
+      display: none;
+      transition: color 0.2s;
+    }
+
+    .clear-input-btn:hover {
+      color: #333;
+    }
+
+    /* Button Group Container */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Button Styling */
+    .btn {
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-barcode {
+      background-color: #0066cc;
+    }
+
+    .btn-barcode:hover {
+      background-color: #0052a3;
+    }
+
+    .btn-qr {
+      background-color: #2e7d32;
+    }
+
+    .btn-qr:hover {
+      background-color: #1b5e20;
+    }
+
+    .btn-classic {
+      background-color: #d97706;
+    }
+
+    .btn-classic:hover {
+      background-color: #b45309;
+    }
+
+    /* Options Bar (Hide + Delete All) */
+    .options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #0066cc;
+    }
+
+    .btn-danger-link {
+      background: transparent;
+      border: none;
+      color: #e53e3e;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-danger-link:hover {
+      background-color: #fff5f5;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      padding: 24px 28px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .modal-box h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .modal-box p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm {
+      background-color: #e53e3e;
+      color: white;
+    }
+
+    .btn-confirm:hover {
+      background-color: #c53030;
+    }
+
+    .btn-cancel {
+      background-color: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .btn-cancel:hover {
+      background-color: #cbd5e0;
+    }
+
+    /* Scalable Grid Layout */
+    #codeGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+      gap: 20px;
+      width: 100%;
+    }
+
+    /* Code Card Container */
+    .code-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      padding: 28px 12px 16px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #dcdfe6;
+      animation: fadeIn 0.2s ease-in-out;
+      min-width: 0;
+      min-height: 140px;
+      overflow: hidden;
+      transition: background-color 0.2s ease;
+    }
+
+    /* SVG styling for Barcodes */
+    .code-card svg {
+      width: 100%;
+      height: auto;
+      max-height: 120px;
+      transition: opacity 0.2s ease;
+    }
+
+    /* QR Code Wrapper & Label */
+    .qr-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.2s ease;
+    }
+
+    .qr-wrapper img, .qr-wrapper canvas {
+      max-width: 130px;
+      max-height: 130px;
+    }
+
+    .qr-label {
+      font-size: 13px;
+      color: #333;
+      word-break: break-all;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* Chuck Testa Image Style */
+    .chuck-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .chuck-img {
+      width: 100%;
+      max-width: 150px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .chuck-label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #d97706;
+      text-align: center;
+    }
+
+    /* Hidden overlay container for title and type tag */
+    .hidden-overlay {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 0 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1;
+    }
+
+    .type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      color: #ffffff;
+    }
+
+    .type-badge.barcode {
+      background-color: #0066cc;
+    }
+
+    .type-badge.qrcode {
+      background-color: #2e7d32;
+    }
+
+    .type-badge.chuck {
+      background-color: #d97706;
+    }
+
+    .hidden-title {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    /* Card Delete Button */
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 4px;
+      line-height: 1;
+      z-index: 3;
+      transition: color 0.2s, background-color 0.2s;
+    }
+
+    .delete-btn:hover {
+      color: #e53e3e;
+      background-color: #fff5f5;
+    }
+
+    /* HIDE MODE STYLES */
+    #codeGrid.hide-active .code-card {
+      background-color: #000000 !important;
+    }
+
+    #codeGrid.hide-active .code-card svg,
+    #codeGrid.hide-active .code-card .qr-wrapper,
+    #codeGrid.hide-active .code-card .chuck-wrapper {
+      opacity: 0;
+    }
+
+    #codeGrid.hide-active .code-card .hidden-overlay {
+      opacity: 1;
+    }
+
+    #codeGrid.hide-active .code-card .delete-btn {
+      color: #aaa;
+    }
+
+    #codeGrid.hide-active .code-card:hover {
+      background-color: #ffffff !important;
+    }
+
+    #codeGrid.hide-active .code-card:hover svg,
+    #codeGrid.hide-active .code-card:hover .qr-wrapper,
+    #codeGrid.hide-active .code-card:hover .chuck-wrapper {
+      opacity: 1;
+    }
+
+    #codeGrid.hide-active .code-card:hover .hidden-overlay {
+      opacity: 0;
+    }
+
+    #codeGrid.hide-active .code-card:hover .delete-btn {
+      color: #888;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Barcode & QR Code Generator</h1>
+
+  <!-- Form Controls -->
+  <form id="codeForm" class="controls">
+    <div class="input-wrapper">
+      <input 
+        type="text" 
+        id="codeInput" 
+        placeholder="Type text, numbers, or URL..." 
+        autocomplete="off"
+      />
+      <button type="button" id="clearInputBtn" class="clear-input-btn" title="Clear input">&times;</button>
+    </div>
+
+    <div class="button-group">
+      <button type="button" id="btnBarcode" class="btn btn-barcode">+ Barcode</button>
+      <button type="button" id="btnQR" class="btn btn-qr">+ QR Code</button>
+      <button type="button" id="btnClassic" class="btn btn-classic">Classic Order</button>
+    </div>
+
+    <!-- Options Row -->
+    <div class="options-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="hideToggle">
+        Hide (Hover to reveal)
+      </label>
+      <button type="button" id="deleteAllBtn" class="btn-danger-link">Delete All</button>
+    </div>
+  </form>
+
+  <!-- Output Grid -->
+  <div id="codeGrid"></div>
+
+  <!-- Delete All Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Delete All Codes?</h3>
+      <p>Are you sure you want to remove all generated barcodes and QR codes from the screen?</p>
+      <div class="modal-actions">
+        <button type="button" id="confirmNo" class="btn btn-cancel">No</button>
+        <button type="button" id="confirmYes" class="btn btn-confirm">Yes, Delete All</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('codeForm');
+    const input = document.getElementById('codeInput');
+    const clearInputBtn = document.getElementById('clearInputBtn');
+    const btnBarcode = document.getElementById('btnBarcode');
+    const btnQR = document.getElementById('btnQR');
+    const btnClassic = document.getElementById('btnClassic');
+    const codeGrid = document.getElementById('codeGrid');
+    const hideToggle = document.getElementById('hideToggle');
+    
+    // Modal elements
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+
+    // Image URL for Chuck Testa easter egg
+    const CHUCK_IMG_URL = "https://preview.redd.it/another-mens-wearhouse-meme-v0-a0s523g5d4mg1.jpeg?auto=webp&s=6b8a8070a4cd6268581ec5d283e4d1237b8c683d";
+
+    // Storage Keys
+    const STORAGE_KEY_CODES = 'saved_generated_codes';
+    const STORAGE_KEY_HIDE = 'saved_hide_preference';
+
+    // State Array
+    let savedCodes = [];
+
+    // Helper: Save current state to Local Storage
+    function saveToLocalStorage() {
+      localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
+      localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
+    }
+
+    // Helper: Load items and hide preference from Local Storage on page load
+    function loadFromLocalStorage() {
+      const savedHideState = localStorage.getItem(STORAGE_KEY_HIDE);
+      if (savedHideState === 'true') {
+        hideToggle.checked = true;
+        codeGrid.classList.add('hide-active');
+      }
+
+      const storedData = localStorage.getItem(STORAGE_KEY_CODES);
+      if (storedData) {
+        try {
+          savedCodes = JSON.parse(storedData);
+          [...savedCodes].reverse().forEach(item => {
+            renderCodeCard(item.id, item.type, item.value);
+          });
+        } catch (e) {
+          console.error("Failed to parse stored codes:", e);
+          savedCodes = [];
+        }
+      }
+    }
+
+    // Toggle clear button visibility based on input content
+    input.addEventListener('input', () => {
+      clearInputBtn.style.display = input.value.trim() ? 'block' : 'none';
+    });
+
+    // Clear input handler
+    clearInputBtn.addEventListener('click', () => {
+      input.value = '';
+      clearInputBtn.style.display = 'none';
+      input.focus();
+    });
+
+    // Hide Toggle event handler
+    hideToggle.addEventListener('change', () => {
+      if (hideToggle.checked) {
+        codeGrid.classList.add('hide-active');
+      } else {
+        codeGrid.classList.remove('hide-active');
+      }
+      saveToLocalStorage();
+    });
+
+    // Modal Control Handlers
+    deleteAllBtn.addEventListener('click', () => {
+      if (savedCodes.length === 0) return;
+      confirmModal.classList.add('active');
+    });
+
+    confirmNo.addEventListener('click', () => {
+      confirmModal.classList.remove('active');
+    });
+
+    confirmYes.addEventListener('click', () => {
+      codeGrid.innerHTML = '';
+      savedCodes = [];
+      saveToLocalStorage();
+      confirmModal.classList.remove('active');
+    });
+
+    confirmModal.addEventListener('click', (e) => {
+      if (e.target === confirmModal) {
+        confirmModal.classList.remove('active');
+      }
+    });
+
+    // Render function for cards
+    function renderCodeCard(id, codeType, textValue) {
+      const card = document.createElement('div');
+      card.className = 'code-card';
+      card.dataset.id = id;
+
+      // Hidden overlay for blackout mode
+      const hiddenOverlay = document.createElement('div');
+      hiddenOverlay.className = 'hidden-overlay';
+
+      const typeBadge = document.createElement('span');
+      typeBadge.className = `type-badge ${codeType}`;
+      
+      let badgeLabel = 'Barcode';
+      if (codeType === 'qrcode') badgeLabel = 'QR Code';
+      if (codeType === 'chuck') badgeLabel = 'Chuck Testa';
+      typeBadge.textContent = badgeLabel;
+
+      const hiddenTitle = document.createElement('div');
+      hiddenTitle.className = 'hidden-title';
+      hiddenTitle.textContent = textValue;
+
+      hiddenOverlay.appendChild(typeBadge);
+      hiddenOverlay.appendChild(hiddenTitle);
+      card.appendChild(hiddenOverlay);
+
+      // Card Delete Button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.innerHTML = '&times;';
+      deleteBtn.title = 'Remove item';
+      deleteBtn.addEventListener('click', () => {
+        card.remove();
+        savedCodes = savedCodes.filter(item => item.id !== id);
+        saveToLocalStorage();
+      });
+      card.appendChild(deleteBtn);
+
+      // Render graphics based on type
+      if (codeType === 'chuck') {
+        const chuckWrapper = document.createElement('div');
+        chuckWrapper.className = 'chuck-wrapper';
+
+        const img = document.createElement('img');
+        img.src = CHUCK_IMG_URL;
+        img.alt = 'Chuck Testa';
+        img.className = 'chuck-img';
+
+        const label = document.createElement('span');
+        label.className = 'chuck-label';
+        label.textContent = 'Nope, Chuck Testa!';
+
+        chuckWrapper.appendChild(img);
+        chuckWrapper.appendChild(label);
+        card.appendChild(chuckWrapper);
+        codeGrid.prepend(card);
+      } else if (codeType === 'barcode') {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        card.appendChild(svg);
+        codeGrid.prepend(card);
+
+        try {
+          JsBarcode(svg, textValue, {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 2,
+            height: 70,
+            displayValue: true,
+            fontSize: 14,
+            margin: 4
+          });
+        } catch (err) {
+          card.remove();
+          return false;
+        }
+      } else if (codeType === 'qrcode') {
+        const qrContainer = document.createElement('div');
+        qrContainer.className = 'qr-wrapper';
+        
+        const qrBox = document.createElement('div');
+        const label = document.createElement('span');
+        label.className = 'qr-label';
+        label.textContent = textValue;
+
+        qrContainer.appendChild(qrBox);
+        qrContainer.appendChild(label);
+        card.appendChild(qrContainer);
+        codeGrid.prepend(card);
+
+        try {
+          new QRCode(qrBox, {
+            text: textValue,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } catch (err) {
+          card.remove();
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // Single item creation handler
+    function handleCreateCode(codeType) {
+      const textValue = input.value.trim();
+      if (!textValue) {
+        input.reportValidity();
+        return;
+      }
+
+      // Check for Chuck Testa easter egg
+      const targetType = textValue.toLowerCase() === 'chuck testa' ? 'chuck' : codeType;
+
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
+      const success = renderCodeCard(id, targetType, textValue);
+
+      if (success) {
+        savedCodes.unshift({ id, type: targetType, value: textValue });
+        saveToLocalStorage();
+      } else {
+        alert(`Unable to generate code for this input.`);
+      }
+
+      input.focus();
+    }
+
+    // Classic Order Handler
+    function handleClassicOrder() {
+      const codes = ['05021/123', '05019/123', '05022/123'];
+      
+      codes.forEach((codeValue, index) => {
+        const barcodeId = (Date.now() + index).toString() + '-b';
+        if (renderCodeCard(barcodeId, 'barcode', codeValue)) {
+          savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue });
+        }
+
+        const qrId = (Date.now() + index).toString() + '-q';
+        if (renderCodeCard(qrId, 'qrcode', codeValue)) {
+          savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue });
+        }
+      });
+
+      saveToLocalStorage();
+    }
+
+    btnBarcode.addEventListener('click', () => handleCreateCode('barcode'));
+    btnQR.addEventListener('click', () => handleCreateCode('qrcode'));
+    btnClassic.addEventListener('click', handleClassicOrder);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleCreateCode('barcode');
+    });
+
+    // Initialize on page load
+    loadFromLocalStorage();
+  </script>
+
+</body>
+</html>
