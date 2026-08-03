@@ -129,21 +129,20 @@
       background-color: #1b5e20;
     }
 
-    .btn-classic {
-      background-color: #d97706;
-    }
-
-    .btn-classic:hover {
-      background-color: #b45309;
-    }
-
-    /* Pink Favorites Button */
     .btn-favorites {
       background-color: #e91e63;
     }
 
     .btn-favorites:hover {
       background-color: #c2185b;
+    }
+
+    .btn-collection {
+      background-color: #d97706;
+    }
+
+    .btn-collection:hover {
+      background-color: #b45309;
     }
 
     /* Options Bar (Hide + Delete All) */
@@ -189,6 +188,65 @@
       background-color: #fff5f5;
     }
 
+    /* Collections Section */
+    .collections-section {
+      padding-top: 10px;
+      border-top: 1px dashed #eee;
+    }
+
+    .collections-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .collections-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .collection-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .collection-chip:hover {
+      background-color: #e2e8f0;
+      border-color: #94a3b8;
+    }
+
+    .collection-chip .delete-chip {
+      color: #94a3b8;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .collection-chip .delete-chip:hover {
+      color: #e53e3e;
+      background-color: #fee2e2;
+    }
+
     /* Modal Overlay */
     .modal-overlay {
       position: fixed;
@@ -230,7 +288,29 @@
     .modal-box p {
       color: #666;
       font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .warning-text {
+      color: #e53e3e;
+      font-weight: 600;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
       margin-bottom: 20px;
+      outline: none;
+    }
+
+    .modal-input:focus {
+      border-color: #d97706;
     }
 
     .modal-actions {
@@ -246,6 +326,15 @@
 
     .btn-confirm:hover {
       background-color: #c53030;
+    }
+
+    .btn-save-collection {
+      background-color: #d97706;
+      color: white;
+    }
+
+    .btn-save-collection:hover {
+      background-color: #b45309;
     }
 
     .btn-cancel {
@@ -518,8 +607,8 @@
     <div class="button-group">
       <button type="button" id="btnBarcode" class="btn btn-barcode">+ Barcode</button>
       <button type="button" id="btnQR" class="btn btn-qr">+ QR Code</button>
-      <button type="button" id="btnClassic" class="btn btn-classic">Classic Order</button>
       <button type="button" id="btnFavorites" class="btn btn-favorites">♥ Favorites</button>
+      <button type="button" id="btnCollection" class="btn btn-collection">+ Collection</button>
     </div>
 
     <!-- Options Row -->
@@ -529,6 +618,12 @@
         Hide (Hover to reveal)
       </label>
       <button type="button" id="deleteAllBtn" class="btn-danger-link">Delete All</button>
+    </div>
+
+    <!-- Saved Collections Bar -->
+    <div id="collectionsContainer" class="collections-section" style="display: none;">
+      <div class="collections-header">Saved Collections</div>
+      <div id="collectionsList" class="collections-list"></div>
     </div>
   </form>
 
@@ -547,22 +642,64 @@
     </div>
   </div>
 
+  <!-- Save Collection Modal -->
+  <div id="collectionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Save Collection</h3>
+      <p>Enter a name to save all codes currently on screen as a collection:</p>
+      <input type="text" id="collectionNameInput" class="modal-input" placeholder="e.g. Inventory Batch A" autocomplete="off" />
+      <div class="modal-actions">
+        <button type="button" id="collectionCancel" class="btn btn-cancel">Cancel</button>
+        <button type="button" id="collectionSave" class="btn btn-save-collection">Save Collection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Single Collection Caution Modal -->
+  <div id="deleteCollectionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Delete Collection?</h3>
+      <p>Are you sure you want to delete the collection <strong id="deleteCollectionTargetName"></strong>?
+        <span class="warning-text">⚠️ Warning: This action is permanent and cannot be recovered.</span>
+      </p>
+      <div class="modal-actions">
+        <button type="button" id="deleteCollectionNo" class="btn btn-cancel">No</button>
+        <button type="button" id="deleteCollectionYes" class="btn btn-confirm">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const form = document.getElementById('codeForm');
     const input = document.getElementById('codeInput');
     const clearInputBtn = document.getElementById('clearInputBtn');
     const btnBarcode = document.getElementById('btnBarcode');
     const btnQR = document.getElementById('btnQR');
-    const btnClassic = document.getElementById('btnClassic');
     const btnFavorites = document.getElementById('btnFavorites');
+    const btnCollection = document.getElementById('btnCollection');
     const codeGrid = document.getElementById('codeGrid');
     const hideToggle = document.getElementById('hideToggle');
     
-    // Modal elements
+    // Delete All Modal elements
     const deleteAllBtn = document.getElementById('deleteAllBtn');
     const confirmModal = document.getElementById('confirmModal');
     const confirmYes = document.getElementById('confirmYes');
     const confirmNo = document.getElementById('confirmNo');
+
+    // Save Collection Modal elements
+    const collectionModal = document.getElementById('collectionModal');
+    const collectionNameInput = document.getElementById('collectionNameInput');
+    const collectionSave = document.getElementById('collectionSave');
+    const collectionCancel = document.getElementById('collectionCancel');
+    const collectionsContainer = document.getElementById('collectionsContainer');
+    const collectionsList = document.getElementById('collectionsList');
+
+    // Delete Single Collection Modal elements
+    const deleteCollectionModal = document.getElementById('deleteCollectionModal');
+    const deleteCollectionTargetName = document.getElementById('deleteCollectionTargetName');
+    const deleteCollectionYes = document.getElementById('deleteCollectionYes');
+    const deleteCollectionNo = document.getElementById('deleteCollectionNo');
+    let collectionToDelete = null;
 
     // Image URL for Chuck Testa easter egg
     const CHUCK_IMG_URL = "https://preview.redd.it/another-mens-wearhouse-meme-v0-a0s523g5d4mg1.jpeg?auto=webp&s=6b8a8070a4cd6268581ec5d283e4d1237b8c683d";
@@ -571,10 +708,12 @@
     const STORAGE_KEY_CODES = 'saved_generated_codes';
     const STORAGE_KEY_HIDE = 'saved_hide_preference';
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
+    const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
 
-    // State Arrays
+    // State Objects/Arrays
     let savedCodes = [];
     let savedFavorites = [];
+    let savedCollections = {};
 
     // Helper: Check if duplicate exists and highlight it
     function isDuplicate(type, value) {
@@ -584,7 +723,6 @@
         if (cardElem) {
           cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
           cardElem.classList.remove('duplicate-highlight');
-          // Force reflow for animation restart
           void cardElem.offsetWidth;
           cardElem.classList.add('duplicate-highlight');
         }
@@ -598,9 +736,73 @@
       localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
       localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
+      localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
     }
 
-    // Helper: Load items and hide preference from Local Storage on page load
+    // Render Saved Collections Chips below options bar
+    function renderCollectionsUI() {
+      collectionsList.innerHTML = '';
+      const names = Object.keys(savedCollections);
+      
+      if (names.length === 0) {
+        collectionsContainer.style.display = 'none';
+        return;
+      }
+
+      collectionsContainer.style.display = 'block';
+
+      names.forEach(name => {
+        const chip = document.createElement('div');
+        chip.className = 'collection-chip';
+        
+        const labelText = document.createElement('span');
+        labelText.textContent = name;
+        chip.appendChild(labelText);
+
+        const deleteX = document.createElement('span');
+        deleteX.className = 'delete-chip';
+        deleteX.innerHTML = '&times;';
+        deleteX.title = `Delete collection "${name}"`;
+        
+        deleteX.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Trigger caution popup
+          collectionToDelete = name;
+          deleteCollectionTargetName.textContent = `"${name}"`;
+          deleteCollectionModal.classList.add('active');
+        });
+
+        chip.appendChild(deleteX);
+
+        // Click Chip: Clear current page & load collection items
+        chip.addEventListener('click', () => {
+          loadCollection(name);
+        });
+
+        collectionsList.appendChild(chip);
+      });
+    }
+
+    // Load a selected collection onto the grid
+    function loadCollection(name) {
+      const items = savedCollections[name];
+      if (!items || !items.length) return;
+
+      codeGrid.innerHTML = '';
+      savedCodes = [];
+
+      [...items].reverse().forEach((item, index) => {
+        const id = Date.now().toString() + index;
+        const isFav = checkIsFavorited(item.type, item.value);
+        if (renderCodeCard(id, item.type, item.value, isFav)) {
+          savedCodes.unshift({ id, type: item.type, value: item.value, isFav });
+        }
+      });
+
+      saveToLocalStorage();
+    }
+
+    // Helper: Load items and options from Local Storage on page load
     function loadFromLocalStorage() {
       const savedHideState = localStorage.getItem(STORAGE_KEY_HIDE);
       if (savedHideState === 'true') {
@@ -616,6 +818,17 @@
           savedFavorites = [];
         }
       }
+
+      const storedCollections = localStorage.getItem(STORAGE_KEY_COLLECTIONS);
+      if (storedCollections) {
+        try {
+          savedCollections = JSON.parse(storedCollections);
+        } catch (e) {
+          savedCollections = {};
+        }
+      }
+
+      renderCollectionsUI();
 
       const storedData = localStorage.getItem(STORAGE_KEY_CODES);
       if (storedData) {
@@ -653,7 +866,7 @@
       saveToLocalStorage();
     });
 
-    // Modal Control Handlers
+    // Delete All Modal Handlers
     deleteAllBtn.addEventListener('click', () => {
       if (savedCodes.length === 0) return;
       confirmModal.classList.add('active');
@@ -676,23 +889,90 @@
       }
     });
 
+    // Delete Collection Modal Handlers
+    deleteCollectionNo.addEventListener('click', () => {
+      deleteCollectionModal.classList.remove('active');
+      collectionToDelete = null;
+    });
+
+    deleteCollectionYes.addEventListener('click', () => {
+      if (collectionToDelete && savedCollections[collectionToDelete]) {
+        delete savedCollections[collectionToDelete];
+        saveToLocalStorage();
+        renderCollectionsUI();
+      }
+      deleteCollectionModal.classList.remove('active');
+      collectionToDelete = null;
+    });
+
+    deleteCollectionModal.addEventListener('click', (e) => {
+      if (e.target === deleteCollectionModal) {
+        deleteCollectionModal.classList.remove('active');
+        collectionToDelete = null;
+      }
+    });
+
+    // Save Collection Modal Handlers
+    btnCollection.addEventListener('click', () => {
+      if (savedCodes.length === 0) {
+        alert('Please generate at least one code before creating a collection.');
+        return;
+      }
+      collectionNameInput.value = '';
+      collectionModal.classList.add('active');
+      collectionNameInput.focus();
+    });
+
+    collectionCancel.addEventListener('click', () => {
+      collectionModal.classList.remove('active');
+    });
+
+    function saveCurrentCollection() {
+      const name = collectionNameInput.value.trim();
+      if (!name) {
+        collectionNameInput.reportValidity();
+        return;
+      }
+
+      savedCollections[name] = savedCodes.map(item => ({
+        type: item.type,
+        value: item.value
+      }));
+
+      saveToLocalStorage();
+      renderCollectionsUI();
+      collectionModal.classList.remove('active');
+    }
+
+    collectionSave.addEventListener('click', saveCurrentCollection);
+    
+    collectionNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveCurrentCollection();
+      }
+    });
+
+    collectionModal.addEventListener('click', (e) => {
+      if (e.target === collectionModal) {
+        collectionModal.classList.remove('active');
+      }
+    });
+
     // Toggle Favorite function
     function toggleFavorite(id, type, value, favBtn) {
       const index = savedFavorites.findIndex(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
       
       if (index > -1) {
-        // Remove from favorites
         savedFavorites.splice(index, 1);
         favBtn.classList.remove('is-fav');
         favBtn.title = 'Add to Favorites';
       } else {
-        // Add to favorites
         savedFavorites.push({ type, value });
         favBtn.classList.add('is-fav');
         favBtn.title = 'Remove from Favorites';
       }
 
-      // Update state in savedCodes
       const codeItem = savedCodes.find(item => item.id === id);
       if (codeItem) {
         codeItem.isFav = index === -1;
@@ -855,33 +1135,6 @@
       input.focus();
     }
 
-    // Classic Order Handler
-    function handleClassicOrder() {
-      const codes = ['05021/123', '05019/123', '05022/123'];
-      
-      codes.forEach((codeValue, index) => {
-        // Handle barcode
-        if (!isDuplicate('barcode', codeValue)) {
-          const barcodeId = (Date.now() + index).toString() + '-b';
-          const bFav = checkIsFavorited('barcode', codeValue);
-          if (renderCodeCard(barcodeId, 'barcode', codeValue, bFav)) {
-            savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue, isFav: bFav });
-          }
-        }
-
-        // Handle QR code
-        if (!isDuplicate('qrcode', codeValue)) {
-          const qrId = (Date.now() + index).toString() + '-q';
-          const qFav = checkIsFavorited('qrcode', codeValue);
-          if (renderCodeCard(qrId, 'qrcode', codeValue, qFav)) {
-            savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue, isFav: qFav });
-          }
-        }
-      });
-
-      saveToLocalStorage();
-    }
-
     // Render All Favorited Codes
     function handleLoadFavorites() {
       if (savedFavorites.length === 0) {
@@ -903,7 +1156,6 @@
 
     btnBarcode.addEventListener('click', () => handleCreateCode('barcode'));
     btnQR.addEventListener('click', () => handleCreateCode('qrcode'));
-    btnClassic.addEventListener('click', handleClassicOrder);
     btnFavorites.addEventListener('click', handleLoadFavorites);
 
     form.addEventListener('submit', (e) => {
