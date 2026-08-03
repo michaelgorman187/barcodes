@@ -39,7 +39,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin: 0 auto 32px auto;
-      max-width: 600px;
+      max-width: 650px;
     }
 
     /* Input Wrapper for inline Clear Icon */
@@ -94,7 +94,7 @@
     /* Button Styling */
     .btn {
       flex: 1;
-      padding: 12px 14px;
+      padding: 12px 10px;
       font-size: 14px;
       font-weight: 600;
       color: white;
@@ -132,6 +132,15 @@
 
     .btn-classic:hover {
       background-color: #b45309;
+    }
+
+    /* Pink Favorites Button */
+    .btn-favorites {
+      background-color: #e91e63;
+    }
+
+    .btn-favorites:hover {
+      background-color: #c2185b;
     }
 
     /* Options Bar (Hide + Delete All) */
@@ -373,6 +382,31 @@
       word-break: break-all;
     }
 
+    /* Heart / Favorite Button */
+    .fav-btn {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      background: transparent;
+      border: none;
+      color: #bbb;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px 6px;
+      line-height: 1;
+      z-index: 4;
+      transition: color 0.2s, transform 0.15s;
+    }
+
+    .fav-btn:hover {
+      color: #e91e63;
+      transform: scale(1.15);
+    }
+
+    .fav-btn.is-fav {
+      color: #e91e63;
+    }
+
     /* Card Delete Button */
     .delete-btn {
       position: absolute;
@@ -387,7 +421,7 @@
       padding: 2px 8px;
       border-radius: 4px;
       line-height: 1;
-      z-index: 3;
+      z-index: 4;
       transition: color 0.2s, background-color 0.2s;
     }
 
@@ -459,6 +493,7 @@
       <button type="button" id="btnBarcode" class="btn btn-barcode">+ Barcode</button>
       <button type="button" id="btnQR" class="btn btn-qr">+ QR Code</button>
       <button type="button" id="btnClassic" class="btn btn-classic">Classic Order</button>
+      <button type="button" id="btnFavorites" class="btn btn-favorites">♥ Favorites</button>
     </div>
 
     <!-- Options Row -->
@@ -493,6 +528,7 @@
     const btnBarcode = document.getElementById('btnBarcode');
     const btnQR = document.getElementById('btnQR');
     const btnClassic = document.getElementById('btnClassic');
+    const btnFavorites = document.getElementById('btnFavorites');
     const codeGrid = document.getElementById('codeGrid');
     const hideToggle = document.getElementById('hideToggle');
     
@@ -508,14 +544,17 @@
     // Storage Keys
     const STORAGE_KEY_CODES = 'saved_generated_codes';
     const STORAGE_KEY_HIDE = 'saved_hide_preference';
+    const STORAGE_KEY_FAVS = 'saved_favorite_codes';
 
-    // State Array
+    // State Arrays
     let savedCodes = [];
+    let savedFavorites = [];
 
     // Helper: Save current state to Local Storage
     function saveToLocalStorage() {
       localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
       localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
+      localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
     }
 
     // Helper: Load items and hide preference from Local Storage on page load
@@ -526,12 +565,21 @@
         codeGrid.classList.add('hide-active');
       }
 
+      const storedFavs = localStorage.getItem(STORAGE_KEY_FAVS);
+      if (storedFavs) {
+        try {
+          savedFavorites = JSON.parse(storedFavs);
+        } catch (e) {
+          savedFavorites = [];
+        }
+      }
+
       const storedData = localStorage.getItem(STORAGE_KEY_CODES);
       if (storedData) {
         try {
           savedCodes = JSON.parse(storedData);
           [...savedCodes].reverse().forEach(item => {
-            renderCodeCard(item.id, item.type, item.value);
+            renderCodeCard(item.id, item.type, item.value, item.isFav || false);
           });
         } catch (e) {
           console.error("Failed to parse stored codes:", e);
@@ -585,11 +633,56 @@
       }
     });
 
+    // Toggle Favorite function
+    function toggleFavorite(id, type, value, favBtn) {
+      const index = savedFavorites.findIndex(fav => fav.type === type && fav.value === value);
+      
+      if (index > -1) {
+        // Remove from favorites
+        savedFavorites.splice(index, 1);
+        favBtn.classList.remove('is-fav');
+        favBtn.innerHTML = '♥'; // outline/regular
+        favBtn.title = 'Add to Favorites';
+      } else {
+        // Add to favorites
+        savedFavorites.push({ type, value });
+        favBtn.classList.add('is-fav');
+        favBtn.innerHTML = '♥';
+        favBtn.title = 'Remove from Favorites';
+      }
+
+      // Update state in savedCodes
+      const codeItem = savedCodes.find(item => item.id === id);
+      if (codeItem) {
+        codeItem.isFav = index === -1;
+      }
+
+      saveToLocalStorage();
+    }
+
+    // Check if an item is favorited
+    function checkIsFavorited(type, value) {
+      return savedFavorites.some(fav => fav.type === type && fav.value === value);
+    }
+
     // Render function for cards
-    function renderCodeCard(id, codeType, textValue) {
+    function renderCodeCard(id, codeType, textValue, isFavInitial = false) {
       const card = document.createElement('div');
       card.className = 'code-card';
       card.dataset.id = id;
+
+      const isFavorited = isFavInitial || checkIsFavorited(codeType, textValue);
+
+      // Heart / Favorite Button
+      const favBtn = document.createElement('button');
+      favBtn.className = `fav-btn ${isFavorited ? 'is-fav' : ''}`;
+      favBtn.innerHTML = '♥';
+      favBtn.title = isFavorited ? 'Remove from Favorites' : 'Add to Favorites';
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorite(id, codeType, textValue, favBtn);
+      });
+      card.appendChild(favBtn);
 
       // Hidden overlay for blackout mode
       const hiddenOverlay = document.createElement('div');
@@ -700,14 +793,13 @@
         return;
       }
 
-      // Check for Chuck Testa easter egg
       const targetType = textValue.toLowerCase() === 'chuck testa' ? 'chuck' : codeType;
-
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
-      const success = renderCodeCard(id, targetType, textValue);
+      const isFav = checkIsFavorited(targetType, textValue);
+      const success = renderCodeCard(id, targetType, textValue, isFav);
 
       if (success) {
-        savedCodes.unshift({ id, type: targetType, value: textValue });
+        savedCodes.unshift({ id, type: targetType, value: textValue, isFav });
         saveToLocalStorage();
       } else {
         alert(`Unable to generate code for this input.`);
@@ -722,13 +814,32 @@
       
       codes.forEach((codeValue, index) => {
         const barcodeId = (Date.now() + index).toString() + '-b';
-        if (renderCodeCard(barcodeId, 'barcode', codeValue)) {
-          savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue });
+        const bFav = checkIsFavorited('barcode', codeValue);
+        if (renderCodeCard(barcodeId, 'barcode', codeValue, bFav)) {
+          savedCodes.unshift({ id: barcodeId, type: 'barcode', value: codeValue, isFav: bFav });
         }
 
         const qrId = (Date.now() + index).toString() + '-q';
-        if (renderCodeCard(qrId, 'qrcode', codeValue)) {
-          savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue });
+        const qFav = checkIsFavorited('qrcode', codeValue);
+        if (renderCodeCard(qrId, 'qrcode', codeValue, qFav)) {
+          savedCodes.unshift({ id: qrId, type: 'qrcode', value: codeValue, isFav: qFav });
+        }
+      });
+
+      saveToLocalStorage();
+    }
+
+    // Render All Favorited Codes
+    function handleLoadFavorites() {
+      if (savedFavorites.length === 0) {
+        alert('You do not have any favorite codes saved yet! Click the heart on any card to favorite it.');
+        return;
+      }
+
+      savedFavorites.forEach((fav, index) => {
+        const id = (Date.now() + index).toString() + '-fav';
+        if (renderCodeCard(id, fav.type, fav.value, true)) {
+          savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
         }
       });
 
@@ -738,6 +849,7 @@
     btnBarcode.addEventListener('click', () => handleCreateCode('barcode'));
     btnQR.addEventListener('click', () => handleCreateCode('qrcode'));
     btnClassic.addEventListener('click', handleClassicOrder);
+    btnFavorites.addEventListener('click', handleLoadFavorites);
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
