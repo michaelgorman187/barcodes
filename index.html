@@ -6,7 +6,7 @@
   <title>Barcode & QR Code Generator</title>
 
   <!-- Inline SVG Favicon (Barcode Icon) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%20066cc'/%3E%3Cpath d='M6 8h2v16H6zm4 0h3v16h-3zm5 0h1v16h-1zm3 0h4v16h-4zm5 0h1v16h-1zm3 0h2v16h-2z' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230066cc'/%3E%3Cpath d='M6 8h2v16H6zm4 0h3v16h-3zm5 0h1v16h-1zm3 0h4v16h-4zm5 0h1v16h-1zm3 0h2v16h-2z' fill='%23ffffff'/%3E%3C/svg%3E">
   
   <!-- JsBarcode Library for standard barcodes -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -14,21 +14,53 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --text-muted: #666666;
+      --border-color: #dcdfe6;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --input-bg: #ffffff;
+      --input-border: #ccc;
+      --chip-bg: #f1f5f9;
+      --chip-border: #cbd5e1;
+      --code-bg: #ffffff;
+      --code-text: #000000;
+    }
+
+    body.dark-mode {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --input-bg: #334155;
+      --input-border: #475569;
+      --chip-bg: #334155;
+      --chip-border: #475569;
+      --code-bg: #ffffff;
+      --code-text: #000000;
+    }
+
     * {
       box-sizing: border-box;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
-      background-color: #f4f6f8;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       padding: 30px 20px;
       margin: 0 auto;
       max-width: 1600px;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
 
     h1 {
       text-align: center;
-      color: #333;
+      color: var(--text-color);
       margin-bottom: 24px;
     }
 
@@ -37,12 +69,14 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      background: #ffffff;
+      background: var(--card-bg);
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
       margin: 0 auto 32px auto;
       max-width: 650px;
+      transition: background-color 0.25s ease, border-color 0.25s ease;
     }
 
     /* Input Wrapper & Batch Options */
@@ -64,10 +98,12 @@
     .input-wrapper input {
       padding: 14px 40px 14px 16px;
       font-size: 16px;
-      border: 1px solid #ccc;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border: 1px solid var(--input-border);
       border-radius: 6px;
       outline: none;
-      transition: border-color 0.2s, flex 0.2s;
+      transition: border-color 0.2s, background-color 0.25s;
     }
 
     #codeInput {
@@ -85,7 +121,7 @@
       display: none;
       font-size: 20px;
       font-weight: bold;
-      color: #666;
+      color: var(--text-muted);
     }
 
     .input-wrapper input:focus {
@@ -100,7 +136,7 @@
       transform: translateY(-50%);
       background: transparent;
       border: none;
-      color: #999;
+      color: var(--text-muted);
       font-size: 22px;
       font-weight: bold;
       cursor: pointer;
@@ -112,7 +148,7 @@
     }
 
     .clear-input-btn:hover {
-      color: #333;
+      color: var(--text-color);
     }
 
     /* Batch Toggle Checkbox */
@@ -122,13 +158,13 @@
       gap: 6px;
       font-size: 13px;
       font-weight: 600;
-      color: #555;
+      color: var(--text-color);
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
-      background: #f8fafc;
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
       padding: 12px 10px;
-      border: 1px solid #e2e8f0;
       border-radius: 6px;
     }
 
@@ -159,6 +195,10 @@
       transition: background-color 0.2s, transform 0.1s;
       text-align: center;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
     .btn:active {
@@ -197,20 +237,72 @@
       background-color: #b45309;
     }
 
-    /* Options Bar (Hide + Sort + Delete All) */
+    /* Options Bar */
     .options-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       padding-top: 10px;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
     }
 
     .left-options {
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Settings Cog Menu Container */
+    .settings-dropdown-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .settings-cog-btn {
+      background: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--text-color);
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .settings-cog-btn:hover {
+      border-color: #0066cc;
+    }
+
+    .settings-cog-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .settings-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 50;
+      min-width: 160px;
+    }
+
+    .settings-menu.active {
+      display: flex;
     }
 
     .toggle-label {
@@ -219,9 +311,10 @@
       gap: 8px;
       font-size: 14px;
       font-weight: 600;
-      color: #444;
+      color: var(--text-color);
       cursor: pointer;
       user-select: none;
+      white-space: nowrap;
     }
 
     .toggle-label input[type="checkbox"] {
@@ -231,23 +324,23 @@
       accent-color: #0066cc;
     }
 
-    /* Sorting Dropdown Styling */
+    /* Select Dropdowns */
     .sort-wrapper {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 14px;
       font-weight: 600;
-      color: #444;
+      color: var(--text-color);
     }
 
     .sort-select {
       padding: 6px 10px;
       font-size: 13px;
       font-weight: 600;
-      color: #334155;
-      background-color: #f8fafc;
-      border: 1px solid #cbd5e1;
+      color: var(--text-color);
+      background-color: var(--chip-bg);
+      border: 1px solid var(--chip-border);
       border-radius: 6px;
       outline: none;
       cursor: pointer;
@@ -255,8 +348,7 @@
     }
 
     .sort-select:hover {
-      background-color: #f1f5f9;
-      border-color: #94a3b8;
+      border-color: #0066cc;
     }
 
     .sort-select:focus {
@@ -277,13 +369,13 @@
     }
 
     .btn-danger-link:hover {
-      background-color: #fff5f5;
+      background-color: rgba(229, 62, 62, 0.1);
     }
 
     /* Collections Section */
     .collections-section {
       padding-top: 10px;
-      border-top: 1px dashed #eee;
+      border-top: 1px dashed var(--border-color);
     }
 
     .collections-header {
@@ -291,7 +383,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #888;
+      color: var(--text-muted);
       margin-bottom: 8px;
     }
 
@@ -305,9 +397,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background-color: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      color: #334155;
+      background-color: var(--chip-bg);
+      border: 1px solid var(--chip-border);
+      color: var(--text-color);
       padding: 4px 10px;
       border-radius: 16px;
       font-size: 13px;
@@ -317,12 +409,32 @@
     }
 
     .collection-chip:hover {
-      background-color: #e2e8f0;
-      border-color: #94a3b8;
+      border-color: #0066cc;
+    }
+
+    .collection-chip .share-chip {
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+
+    .collection-chip .share-chip:hover {
+      color: #0066cc;
+    }
+
+    .collection-chip .share-chip svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
     }
 
     .collection-chip .delete-chip {
-      color: #94a3b8;
+      color: var(--text-muted);
       font-weight: bold;
       border-radius: 50%;
       width: 16px;
@@ -336,7 +448,7 @@
 
     .collection-chip .delete-chip:hover {
       color: #e53e3e;
-      background-color: #fee2e2;
+      background-color: rgba(229, 62, 62, 0.15);
     }
 
     /* Modal Overlay */
@@ -346,7 +458,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -362,23 +474,25 @@
     }
 
     .modal-box {
-      background: #ffffff;
+      background: var(--card-bg);
+      color: var(--text-color);
       padding: 24px 28px;
       border-radius: 10px;
-      max-width: 400px;
+      max-width: 440px;
       width: 90%;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
       text-align: center;
     }
 
     .modal-box h3 {
       margin-top: 0;
       margin-bottom: 12px;
-      color: #333;
+      color: var(--text-color);
     }
 
     .modal-box p {
-      color: #666;
+      color: var(--text-muted);
       font-size: 14px;
       margin-bottom: 16px;
       line-height: 1.4;
@@ -387,15 +501,27 @@
     .warning-text {
       color: #e53e3e;
       font-weight: 600;
-      display: block;
-      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .warning-icon {
+      width: 16px;
+      height: 16px;
+      fill: #e53e3e;
+      flex-shrink: 0;
     }
 
     .modal-input {
       width: 100%;
       padding: 10px 14px;
       font-size: 15px;
-      border: 1px solid #ccc;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border: 1px solid var(--input-border);
       border-radius: 6px;
       margin-bottom: 20px;
       outline: none;
@@ -403,6 +529,12 @@
 
     .modal-input:focus {
       border-color: #d97706;
+    }
+
+    .share-url-input {
+      font-family: monospace;
+      font-size: 12px;
+      text-overflow: ellipsis;
     }
 
     .modal-actions {
@@ -430,12 +562,13 @@
     }
 
     .btn-cancel {
-      background-color: #e2e8f0;
-      color: #4a5568;
+      background-color: var(--chip-bg);
+      color: var(--text-color);
+      border: 1px solid var(--chip-border);
     }
 
     .btn-cancel:hover {
-      background-color: #cbd5e0;
+      background-color: var(--border-color);
     }
 
     /* Scalable Grid Layout */
@@ -453,16 +586,17 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #ffffff;
+      background: var(--card-bg);
+      color: var(--text-color);
       padding: 28px 12px 16px 12px;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-      border: 1px solid #dcdfe6;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
       animation: fadeIn 0.2s ease-in-out;
       min-width: 0;
       min-height: 140px;
       overflow: hidden;
-      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
     /* Duplicate Flash Animation */
@@ -473,19 +607,28 @@
     @keyframes pulseHighlight {
       0% {
         border-color: #e53e3e;
-        box-shadow: 0 0 12px rgba(229, 62, 62, 0.6);
-        transform: scale(1);
+        box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.4), 0 0 12px rgba(229, 62, 62, 0.5);
       }
       50% {
         border-color: #e53e3e;
-        box-shadow: 0 0 18px rgba(229, 62, 62, 0.9);
-        transform: scale(1.04);
+        box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.6), 0 0 20px rgba(229, 62, 62, 0.8);
       }
       100% {
-        border-color: #dcdfe6;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        transform: scale(1);
+        border-color: var(--border-color);
+        box-shadow: var(--shadow);
       }
+    }
+
+    /* Code Canvas Container - Always Scannable White Background */
+    .barcode-canvas-container {
+      background-color: var(--code-bg);
+      border-radius: 4px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
     }
 
     /* SVG styling for Barcodes */
@@ -494,6 +637,14 @@
       height: auto;
       max-height: 120px;
       transition: opacity 0.2s ease;
+    }
+
+    .code-card svg rect {
+      fill: var(--code-text);
+    }
+
+    .code-card svg text {
+      fill: var(--code-text);
     }
 
     /* QR Code Wrapper & Label */
@@ -508,11 +659,14 @@
     .qr-wrapper img, .qr-wrapper canvas {
       max-width: 130px;
       max-height: 130px;
+      background-color: var(--code-bg);
+      padding: 6px;
+      border-radius: 4px;
     }
 
     .qr-label {
       font-size: 13px;
-      color: #333;
+      color: var(--text-color);
       word-break: break-all;
       text-align: center;
       margin-top: 4px;
@@ -596,13 +750,21 @@
       left: 8px;
       background: transparent;
       border: none;
-      color: #bbb;
-      font-size: 18px;
+      color: var(--text-muted);
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 2px;
       line-height: 1;
       z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: color 0.2s, transform 0.15s;
+    }
+
+    .fav-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
     }
 
     .fav-btn:hover {
@@ -621,7 +783,7 @@
       right: 8px;
       background: transparent;
       border: none;
-      color: #888;
+      color: var(--text-muted);
       font-size: 20px;
       font-weight: bold;
       cursor: pointer;
@@ -634,7 +796,7 @@
 
     .delete-btn:hover {
       color: #e53e3e;
-      background-color: #fff5f5;
+      background-color: rgba(229, 62, 62, 0.1);
     }
 
     /* HIDE MODE STYLES */
@@ -642,7 +804,7 @@
       background-color: #000000 !important;
     }
 
-    #codeGrid.hide-active .code-card svg,
+    #codeGrid.hide-active .code-card .barcode-canvas-container,
     #codeGrid.hide-active .code-card .qr-wrapper,
     #codeGrid.hide-active .code-card .chuck-wrapper {
       opacity: 0;
@@ -657,10 +819,10 @@
     }
 
     #codeGrid.hide-active .code-card:hover {
-      background-color: #ffffff !important;
+      background-color: var(--card-bg) !important;
     }
 
-    #codeGrid.hide-active .code-card:hover svg,
+    #codeGrid.hide-active .code-card:hover .barcode-canvas-container,
     #codeGrid.hide-active .code-card:hover .qr-wrapper,
     #codeGrid.hide-active .code-card:hover .chuck-wrapper {
       opacity: 1;
@@ -671,7 +833,13 @@
     }
 
     #codeGrid.hide-active .code-card:hover .delete-btn {
-      color: #888;
+      color: var(--text-muted);
+    }
+
+    .btn-svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
     }
 
     @keyframes fadeIn {
@@ -713,18 +881,37 @@
     <div class="button-group">
       <button type="button" id="btnBarcode" class="btn btn-barcode">+ Barcode</button>
       <button type="button" id="btnQR" class="btn btn-qr">+ QR Code</button>
-      <button type="button" id="btnFavorites" class="btn btn-favorites">♥ Favorites</button>
+      <button type="button" id="btnFavorites" class="btn btn-favorites">
+        <svg class="btn-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        Favorites
+      </button>
       <button type="button" id="btnCollection" class="btn btn-collection">+ Collection</button>
     </div>
 
     <!-- Options Row -->
     <div class="options-row">
       <div class="left-options">
-        <label class="toggle-label">
-          <input type="checkbox" id="hideToggle">
-          Hide (Hover to reveal)
-        </label>
+        <!-- Settings Dropdown -->
+        <div class="settings-dropdown-wrapper">
+          <button type="button" id="settingsCogBtn" class="settings-cog-btn" title="Settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          </button>
+          <div id="settingsMenu" class="settings-menu">
+            <!-- Dark Mode Toggle -->
+            <label class="toggle-label">
+              <input type="checkbox" id="darkModeToggle">
+              Dark mode
+            </label>
+
+            <!-- Hide Overlay Toggle -->
+            <label class="toggle-label">
+              <input type="checkbox" id="hideToggle">
+              Hide (Hover)
+            </label>
+          </div>
+        </div>
         
+        <!-- Sort Dropdown -->
         <div class="sort-wrapper">
           <label for="sortSelect">Sort:</label>
           <select id="sortSelect" class="sort-select">
@@ -778,11 +965,27 @@
     <div class="modal-box">
       <h3>Delete Collection?</h3>
       <p>Are you sure you want to delete the collection <strong id="deleteCollectionTargetName"></strong>?
-        <span class="warning-text">⚠️ Warning: This action is permanent and cannot be recovered.</span>
+        <span class="warning-text">
+          <svg class="warning-icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          Warning: This action is permanent and cannot be recovered.
+        </span>
       </p>
       <div class="modal-actions">
         <button type="button" id="deleteCollectionNo" class="btn btn-cancel">No</button>
         <button type="button" id="deleteCollectionYes" class="btn btn-confirm">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Collection Modal -->
+  <div id="shareModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Share Collection</h3>
+      <p>Copy this link to share <strong id="shareCollectionName"></strong> with anyone:</p>
+      <input type="text" id="shareUrlInput" class="modal-input share-url-input" readonly />
+      <div class="modal-actions">
+        <button type="button" id="shareCloseBtn" class="btn btn-cancel">Close</button>
+        <button type="button" id="shareCopyBtn" class="btn btn-barcode">Copy Link</button>
       </div>
     </div>
   </div>
@@ -801,7 +1004,12 @@
     const btnCollection = document.getElementById('btnCollection');
     const codeGrid = document.getElementById('codeGrid');
     const hideToggle = document.getElementById('hideToggle');
+    const darkModeToggle = document.getElementById('darkModeToggle');
     const sortSelect = document.getElementById('sortSelect');
+
+    // Settings Cog elements
+    const settingsCogBtn = document.getElementById('settingsCogBtn');
+    const settingsMenu = document.getElementById('settingsMenu');
     
     // Delete All Modal elements
     const deleteAllBtn = document.getElementById('deleteAllBtn');
@@ -824,12 +1032,24 @@
     const deleteCollectionNo = document.getElementById('deleteCollectionNo');
     let collectionToDelete = null;
 
+    // Share Collection Modal elements
+    const shareModal = document.getElementById('shareModal');
+    const shareCollectionName = document.getElementById('shareCollectionName');
+    const shareUrlInput = document.getElementById('shareUrlInput');
+    const shareCopyBtn = document.getElementById('shareCopyBtn');
+    const shareCloseBtn = document.getElementById('shareCloseBtn');
+
+    // SVG String Templates
+    const SVG_SHARE_ICON = `<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
+    const SVG_HEART_ICON = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+
     // Image URL for Chuck Testa easter egg
     const CHUCK_IMG_URL = "https://preview.redd.it/another-mens-wearhouse-meme-v0-a0s523g5d4mg1.jpeg?auto=webp&s=6b8a8070a4cd6268581ec5d283e4d1237b8c683d";
 
     // Storage Keys
     const STORAGE_KEY_CODES = 'saved_generated_codes';
     const STORAGE_KEY_HIDE = 'saved_hide_preference';
+    const STORAGE_KEY_DARK = 'saved_dark_mode';
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
     const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
     const STORAGE_KEY_SORT = 'saved_sort_preference';
@@ -854,7 +1074,6 @@
       } else if (mode === 'desc') {
         sorted.sort((a, b) => compareAlphanumeric(b.value, a.value));
       }
-      // 'custom' maintains standard array ordering
       return sorted;
     }
 
@@ -876,7 +1095,7 @@
         if (cardElem) {
           cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
           cardElem.classList.remove('duplicate-highlight');
-          void cardElem.offsetWidth;
+          void cardElem.offsetWidth; // Reflow trigger to restart CSS animation
           cardElem.classList.add('duplicate-highlight');
         }
         return true;
@@ -888,9 +1107,65 @@
     function saveToLocalStorage() {
       localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
       localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
+      localStorage.setItem(STORAGE_KEY_DARK, darkModeToggle.checked);
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
       localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
       localStorage.setItem(STORAGE_KEY_SORT, sortSelect.value);
+    }
+
+    // Generate Shareable Link for a collection
+    function generateShareUrl(name) {
+      const items = savedCollections[name];
+      if (!items) return '';
+      
+      const payload = {
+        name: name,
+        items: items
+      };
+      
+      const jsonStr = JSON.stringify(payload);
+      const encoded = btoa(encodeURIComponent(jsonStr));
+      
+      const baseUrl = window.location.origin + window.location.pathname;
+      return `${baseUrl}?import=${encoded}`;
+    }
+
+    // Open Share Modal
+    function openShareModal(name) {
+      const url = generateShareUrl(name);
+      shareCollectionName.textContent = `"${name}"`;
+      shareUrlInput.value = url;
+      shareCopyBtn.textContent = 'Copy Link';
+      shareModal.classList.add('active');
+    }
+
+    // Check URL parameters for imported collections on page load
+    function checkImportUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const importData = urlParams.get('import');
+      
+      if (!importData) return;
+      
+      try {
+        const jsonStr = decodeURIComponent(atob(importData));
+        const payload = JSON.parse(jsonStr);
+        
+        if (payload && payload.name && Array.isArray(payload.items)) {
+          savedCollections[payload.name] = payload.items;
+          saveToLocalStorage();
+          renderCollectionsUI();
+          
+          loadCollection(payload.name);
+
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          setTimeout(() => {
+            alert(`Successfully imported collection "${payload.name}"!`);
+          }, 300);
+        }
+      } catch (err) {
+        console.error("Failed to import collection from URL:", err);
+      }
     }
 
     // Render Saved Collections Chips below options bar
@@ -913,6 +1188,18 @@
         labelText.textContent = name;
         chip.appendChild(labelText);
 
+        // Share button (SVG)
+        const shareBtn = document.createElement('span');
+        shareBtn.className = 'share-chip';
+        shareBtn.innerHTML = SVG_SHARE_ICON;
+        shareBtn.title = `Share collection "${name}"`;
+        shareBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openShareModal(name);
+        });
+        chip.appendChild(shareBtn);
+
+        // Delete button
         const deleteX = document.createElement('span');
         deleteX.className = 'delete-chip';
         deleteX.innerHTML = '&times;';
@@ -960,6 +1247,12 @@
         codeGrid.classList.add('hide-active');
       }
 
+      const savedDarkState = localStorage.getItem(STORAGE_KEY_DARK);
+      if (savedDarkState === 'true') {
+        darkModeToggle.checked = true;
+        document.body.classList.add('dark-mode');
+      }
+
       const storedSort = localStorage.getItem(STORAGE_KEY_SORT);
       if (storedSort && ['custom', 'asc', 'desc'].includes(storedSort)) {
         sortSelect.value = storedSort;
@@ -967,20 +1260,12 @@
 
       const storedFavs = localStorage.getItem(STORAGE_KEY_FAVS);
       if (storedFavs) {
-        try {
-          savedFavorites = JSON.parse(storedFavs);
-        } catch (e) {
-          savedFavorites = [];
-        }
+        try { savedFavorites = JSON.parse(storedFavs); } catch (e) { savedFavorites = []; }
       }
 
       const storedCollections = localStorage.getItem(STORAGE_KEY_COLLECTIONS);
       if (storedCollections) {
-        try {
-          savedCollections = JSON.parse(storedCollections);
-        } catch (e) {
-          savedCollections = {};
-        }
+        try { savedCollections = JSON.parse(storedCollections); } catch (e) { savedCollections = {}; }
       }
 
       renderCollectionsUI();
@@ -995,15 +1280,36 @@
           savedCodes = [];
         }
       }
+
+      checkImportUrl();
     }
 
-    // Sort Dropdown event listener
+    // Settings Cog Toggle
+    settingsCogBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsMenu.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!settingsMenu.contains(e.target) && e.target !== settingsCogBtn) {
+        settingsMenu.classList.remove('active');
+      }
+    });
+
+    darkModeToggle.addEventListener('change', () => {
+      if (darkModeToggle.checked) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      saveToLocalStorage();
+    });
+
     sortSelect.addEventListener('change', () => {
       refreshGridDisplay();
       saveToLocalStorage();
     });
 
-    // Batch toggle handler
     addBatchToggle.addEventListener('change', () => {
       const isBatchActive = addBatchToggle.checked;
       batchInput.style.display = isBatchActive ? 'block' : 'none';
@@ -1012,7 +1318,6 @@
       updateClearButtonVisibility();
     });
 
-    // Toggle clear button visibility based on inputs
     function updateClearButtonVisibility() {
       const hasContent = input.value.trim() || (addBatchToggle.checked && batchInput.value.trim());
       clearInputBtn.style.display = hasContent ? 'block' : 'none';
@@ -1021,7 +1326,6 @@
     input.addEventListener('input', updateClearButtonVisibility);
     batchInput.addEventListener('input', updateClearButtonVisibility);
 
-    // Clear input handler
     clearInputBtn.addEventListener('click', () => {
       input.value = '';
       batchInput.value = '';
@@ -1029,7 +1333,6 @@
       input.focus();
     });
 
-    // Hide Toggle event handler
     hideToggle.addEventListener('change', () => {
       if (hideToggle.checked) {
         codeGrid.classList.add('hide-active');
@@ -1039,7 +1342,26 @@
       saveToLocalStorage();
     });
 
-    // Delete All Modal Handlers
+    shareCloseBtn.addEventListener('click', () => {
+      shareModal.classList.remove('active');
+    });
+
+    shareCopyBtn.addEventListener('click', () => {
+      shareUrlInput.select();
+      navigator.clipboard.writeText(shareUrlInput.value).then(() => {
+        shareCopyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          shareCopyBtn.textContent = 'Copy Link';
+        }, 2000);
+      });
+    });
+
+    shareModal.addEventListener('click', (e) => {
+      if (e.target === shareModal) {
+        shareModal.classList.remove('active');
+      }
+    });
+
     deleteAllBtn.addEventListener('click', () => {
       if (savedCodes.length === 0) return;
       confirmModal.classList.add('active');
@@ -1062,7 +1384,6 @@
       }
     });
 
-    // Delete Collection Modal Handlers
     deleteCollectionNo.addEventListener('click', () => {
       deleteCollectionModal.classList.remove('active');
       collectionToDelete = null;
@@ -1085,7 +1406,6 @@
       }
     });
 
-    // Save Collection Modal Handlers
     btnCollection.addEventListener('click', () => {
       if (savedCodes.length === 0) {
         alert('Please generate at least one code before creating a collection.');
@@ -1132,7 +1452,6 @@
       }
     });
 
-    // Toggle Favorite function
     function toggleFavorite(id, type, value, favBtn) {
       const index = savedFavorites.findIndex(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
       
@@ -1154,12 +1473,10 @@
       saveToLocalStorage();
     }
 
-    // Check if an item is favorited
     function checkIsFavorited(type, value) {
       return savedFavorites.some(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
     }
 
-    // Render function for cards
     function renderCodeCard(id, codeType, textValue, isFavInitial = false) {
       const card = document.createElement('div');
       card.className = 'code-card';
@@ -1167,10 +1484,10 @@
 
       const isFavorited = isFavInitial || checkIsFavorited(codeType, textValue);
 
-      // Heart / Favorite Button
+      // Heart / Favorite Button (SVG)
       const favBtn = document.createElement('button');
       favBtn.className = `fav-btn ${isFavorited ? 'is-fav' : ''}`;
-      favBtn.innerHTML = '♥';
+      favBtn.innerHTML = SVG_HEART_ICON;
       favBtn.title = isFavorited ? 'Remove from Favorites' : 'Add to Favorites';
       favBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1178,7 +1495,6 @@
       });
       card.appendChild(favBtn);
 
-      // Hidden overlay for blackout mode
       const hiddenOverlay = document.createElement('div');
       hiddenOverlay.className = 'hidden-overlay';
 
@@ -1198,7 +1514,6 @@
       hiddenOverlay.appendChild(hiddenTitle);
       card.appendChild(hiddenOverlay);
 
-      // Card Delete Button
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'delete-btn';
       deleteBtn.innerHTML = '&times;';
@@ -1210,7 +1525,6 @@
       });
       card.appendChild(deleteBtn);
 
-      // Render graphics based on type
       if (codeType === 'chuck') {
         const chuckWrapper = document.createElement('div');
         chuckWrapper.className = 'chuck-wrapper';
@@ -1229,14 +1543,19 @@
         card.appendChild(chuckWrapper);
         codeGrid.appendChild(card);
       } else if (codeType === 'barcode') {
+        const canvasContainer = document.createElement('div');
+        canvasContainer.className = 'barcode-canvas-container';
+
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        card.appendChild(svg);
+        canvasContainer.appendChild(svg);
+        card.appendChild(canvasContainer);
         codeGrid.appendChild(card);
 
         try {
           JsBarcode(svg, textValue, {
             format: "CODE128",
-            lineColor: "#000",
+            lineColor: "#000000",
+            background: "#ffffff",
             width: 2,
             height: 70,
             displayValue: true,
@@ -1279,7 +1598,6 @@
       return true;
     }
 
-    // Single item creation handler
     function handleCreateCode(codeType) {
       const mainVal = input.value.trim();
       const batchVal = batchInput.value.trim();
@@ -1302,7 +1620,6 @@
 
       const targetType = textValue.toLowerCase() === 'chuck testa' ? 'chuck' : codeType;
 
-      // Duplicate check
       if (isDuplicate(targetType, textValue)) {
         return;
       }
@@ -1310,17 +1627,14 @@
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
       const isFav = checkIsFavorited(targetType, textValue);
       
-      // Store in array (custom order: newest first at index 0)
       savedCodes.unshift({ id, type: targetType, value: textValue, isFav });
       
-      // Re-render display with current sort preference
       refreshGridDisplay();
       saveToLocalStorage();
 
       input.focus();
     }
 
-    // Render All Favorited Codes
     function handleLoadFavorites() {
       if (savedFavorites.length === 0) {
         alert('You do not have any favorite codes saved yet! Click the heart on any card to favorite it.');
@@ -1347,7 +1661,6 @@
       handleCreateCode('barcode');
     });
 
-    // Initialize on page load
     loadFromLocalStorage();
   </script>
 
