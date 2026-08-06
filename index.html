@@ -45,20 +45,47 @@
       max-width: 650px;
     }
 
-    /* Input Wrapper for inline Clear Icon */
-    .input-wrapper {
-      position: relative;
+    /* Input Wrapper & Batch Options */
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       width: 100%;
     }
 
+    .input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .input-wrapper input {
-      width: 100%;
       padding: 14px 40px 14px 16px;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 6px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, flex 0.2s;
+    }
+
+    #codeInput {
+      flex: 1;
+      width: 100%;
+    }
+
+    #batchInput {
+      width: 130px;
+      display: none;
+      padding: 14px 12px;
+    }
+
+    .batch-slash {
+      display: none;
+      font-size: 20px;
+      font-weight: bold;
+      color: #666;
     }
 
     .input-wrapper input:focus {
@@ -81,10 +108,35 @@
       line-height: 1;
       display: none;
       transition: color 0.2s;
+      z-index: 2;
     }
 
     .clear-input-btn:hover {
       color: #333;
+    }
+
+    /* Batch Toggle Checkbox */
+    .batch-toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      background: #f8fafc;
+      padding: 12px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .batch-toggle-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #0066cc;
     }
 
     /* Button Group Container */
@@ -594,14 +646,28 @@
 
   <!-- Form Controls -->
   <form id="codeForm" class="controls">
-    <div class="input-wrapper">
-      <input 
-        type="text" 
-        id="codeInput" 
-        placeholder="Type text, numbers, or URL..." 
-        autocomplete="off"
-      />
-      <button type="button" id="clearInputBtn" class="clear-input-btn" title="Clear input">&times;</button>
+    <div class="input-row">
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="codeInput" 
+          placeholder="Type text, numbers, or URL..." 
+          autocomplete="off"
+        />
+        <span id="batchSlash" class="batch-slash">/</span>
+        <input 
+          type="text" 
+          id="batchInput" 
+          placeholder="Batch ID" 
+          autocomplete="off"
+        />
+        <button type="button" id="clearInputBtn" class="clear-input-btn" title="Clear input">&times;</button>
+      </div>
+      
+      <label class="batch-toggle-label">
+        <input type="checkbox" id="addBatchToggle">
+        Add batch
+      </label>
     </div>
 
     <div class="button-group">
@@ -672,7 +738,11 @@
   <script>
     const form = document.getElementById('codeForm');
     const input = document.getElementById('codeInput');
+    const batchInput = document.getElementById('batchInput');
+    const batchSlash = document.getElementById('batchSlash');
+    const addBatchToggle = document.getElementById('addBatchToggle');
     const clearInputBtn = document.getElementById('clearInputBtn');
+    
     const btnBarcode = document.getElementById('btnBarcode');
     const btnQR = document.getElementById('btnQR');
     const btnFavorites = document.getElementById('btnFavorites');
@@ -766,7 +836,6 @@
         
         deleteX.addEventListener('click', (e) => {
           e.stopPropagation();
-          // Trigger caution popup
           collectionToDelete = name;
           deleteCollectionTargetName.textContent = `"${name}"`;
           deleteCollectionModal.classList.add('active');
@@ -774,7 +843,6 @@
 
         chip.appendChild(deleteX);
 
-        // Click Chip: Clear current page & load collection items
         chip.addEventListener('click', () => {
           loadCollection(name);
         });
@@ -802,7 +870,7 @@
       saveToLocalStorage();
     }
 
-    // Helper: Load items and options from Local Storage on page load
+    // Load state from local storage
     function loadFromLocalStorage() {
       const savedHideState = localStorage.getItem(STORAGE_KEY_HIDE);
       if (savedHideState === 'true') {
@@ -844,15 +912,29 @@
       }
     }
 
-    // Toggle clear button visibility based on input content
-    input.addEventListener('input', () => {
-      clearInputBtn.style.display = input.value.trim() ? 'block' : 'none';
+    // Batch toggle handler
+    addBatchToggle.addEventListener('change', () => {
+      const isBatchActive = addBatchToggle.checked;
+      batchInput.style.display = isBatchActive ? 'block' : 'none';
+      batchSlash.style.display = isBatchActive ? 'inline-block' : 'none';
+      input.placeholder = isBatchActive ? 'Main Code...' : 'Type text, numbers, or URL...';
+      updateClearButtonVisibility();
     });
+
+    // Toggle clear button visibility based on inputs
+    function updateClearButtonVisibility() {
+      const hasContent = input.value.trim() || (addBatchToggle.checked && batchInput.value.trim());
+      clearInputBtn.style.display = hasContent ? 'block' : 'none';
+    }
+
+    input.addEventListener('input', updateClearButtonVisibility);
+    batchInput.addEventListener('input', updateClearButtonVisibility);
 
     // Clear input handler
     clearInputBtn.addEventListener('click', () => {
       input.value = '';
-      clearInputBtn.style.display = 'none';
+      batchInput.value = '';
+      updateClearButtonVisibility();
       input.focus();
     });
 
@@ -1108,9 +1190,26 @@
 
     // Single item creation handler
     function handleCreateCode(codeType) {
-      const textValue = input.value.trim();
+      const mainVal = input.value.trim();
+      const batchVal = batchInput.value.trim();
+      
+      let textValue = '';
+      if (addBatchToggle.checked) {
+        if (mainVal && batchVal) {
+          textValue = `${mainVal}/${batchVal}`;
+        } else {
+          textValue = mainVal || batchVal;
+        }
+      } else {
+        textValue = mainVal;
+      }
+
       if (!textValue) {
-        input.reportValidity();
+        if (addBatchToggle.checked && !mainVal) {
+          input.reportValidity();
+        } else {
+          input.reportValidity();
+        }
         return;
       }
 
