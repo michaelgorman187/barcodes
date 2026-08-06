@@ -197,13 +197,20 @@
       background-color: #b45309;
     }
 
-    /* Options Bar (Hide + Delete All) */
+    /* Options Bar (Hide + Sort + Delete All) */
     .options-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       padding-top: 10px;
       border-top: 1px solid #eee;
+    }
+
+    .left-options {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
     .toggle-label {
@@ -224,6 +231,38 @@
       accent-color: #0066cc;
     }
 
+    /* Sorting Dropdown Styling */
+    .sort-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .sort-select {
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .sort-select:hover {
+      background-color: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .sort-select:focus {
+      border-color: #0066cc;
+    }
+
     .btn-danger-link {
       background: transparent;
       border: none;
@@ -234,6 +273,7 @@
       padding: 4px 8px;
       border-radius: 4px;
       transition: background-color 0.2s;
+      white-space: nowrap;
     }
 
     .btn-danger-link:hover {
@@ -679,10 +719,22 @@
 
     <!-- Options Row -->
     <div class="options-row">
-      <label class="toggle-label">
-        <input type="checkbox" id="hideToggle">
-        Hide (Hover to reveal)
-      </label>
+      <div class="left-options">
+        <label class="toggle-label">
+          <input type="checkbox" id="hideToggle">
+          Hide (Hover to reveal)
+        </label>
+        
+        <div class="sort-wrapper">
+          <label for="sortSelect">Sort:</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="custom">Custom (Added Order)</option>
+            <option value="asc">Ascending (A–Z / 0–9)</option>
+            <option value="desc">Descending (Z–A / 9–0)</option>
+          </select>
+        </div>
+      </div>
+
       <button type="button" id="deleteAllBtn" class="btn-danger-link">Delete All</button>
     </div>
 
@@ -749,6 +801,7 @@
     const btnCollection = document.getElementById('btnCollection');
     const codeGrid = document.getElementById('codeGrid');
     const hideToggle = document.getElementById('hideToggle');
+    const sortSelect = document.getElementById('sortSelect');
     
     // Delete All Modal elements
     const deleteAllBtn = document.getElementById('deleteAllBtn');
@@ -779,11 +832,41 @@
     const STORAGE_KEY_HIDE = 'saved_hide_preference';
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
     const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
+    const STORAGE_KEY_SORT = 'saved_sort_preference';
 
     // State Objects/Arrays
     let savedCodes = [];
     let savedFavorites = [];
     let savedCollections = {};
+
+    // Helper: Natural alphanumeric comparison
+    function compareAlphanumeric(a, b) {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    // Helper: Sort array according to current dropdown setting
+    function getSortedCodes() {
+      const mode = sortSelect.value;
+      const sorted = [...savedCodes];
+
+      if (mode === 'asc') {
+        sorted.sort((a, b) => compareAlphanumeric(a.value, b.value));
+      } else if (mode === 'desc') {
+        sorted.sort((a, b) => compareAlphanumeric(b.value, a.value));
+      }
+      // 'custom' maintains standard array ordering
+      return sorted;
+    }
+
+    // Refresh display of the entire grid while maintaining sort order
+    function refreshGridDisplay() {
+      codeGrid.innerHTML = '';
+      const itemsToRender = getSortedCodes();
+      
+      itemsToRender.forEach(item => {
+        renderCodeCard(item.id, item.type, item.value, item.isFav || false);
+      });
+    }
 
     // Helper: Check if duplicate exists and highlight it
     function isDuplicate(type, value) {
@@ -807,6 +890,7 @@
       localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
       localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
+      localStorage.setItem(STORAGE_KEY_SORT, sortSelect.value);
     }
 
     // Render Saved Collections Chips below options bar
@@ -856,17 +940,15 @@
       const items = savedCollections[name];
       if (!items || !items.length) return;
 
-      codeGrid.innerHTML = '';
       savedCodes = [];
 
-      [...items].reverse().forEach((item, index) => {
+      items.forEach((item, index) => {
         const id = Date.now().toString() + index;
         const isFav = checkIsFavorited(item.type, item.value);
-        if (renderCodeCard(id, item.type, item.value, isFav)) {
-          savedCodes.unshift({ id, type: item.type, value: item.value, isFav });
-        }
+        savedCodes.push({ id, type: item.type, value: item.value, isFav });
       });
 
+      refreshGridDisplay();
       saveToLocalStorage();
     }
 
@@ -876,6 +958,11 @@
       if (savedHideState === 'true') {
         hideToggle.checked = true;
         codeGrid.classList.add('hide-active');
+      }
+
+      const storedSort = localStorage.getItem(STORAGE_KEY_SORT);
+      if (storedSort && ['custom', 'asc', 'desc'].includes(storedSort)) {
+        sortSelect.value = storedSort;
       }
 
       const storedFavs = localStorage.getItem(STORAGE_KEY_FAVS);
@@ -902,15 +989,19 @@
       if (storedData) {
         try {
           savedCodes = JSON.parse(storedData);
-          [...savedCodes].reverse().forEach(item => {
-            renderCodeCard(item.id, item.type, item.value, item.isFav || false);
-          });
+          refreshGridDisplay();
         } catch (e) {
           console.error("Failed to parse stored codes:", e);
           savedCodes = [];
         }
       }
     }
+
+    // Sort Dropdown event listener
+    sortSelect.addEventListener('change', () => {
+      refreshGridDisplay();
+      saveToLocalStorage();
+    });
 
     // Batch toggle handler
     addBatchToggle.addEventListener('change', () => {
@@ -1136,11 +1227,11 @@
         chuckWrapper.appendChild(img);
         chuckWrapper.appendChild(label);
         card.appendChild(chuckWrapper);
-        codeGrid.prepend(card);
+        codeGrid.appendChild(card);
       } else if (codeType === 'barcode') {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         card.appendChild(svg);
-        codeGrid.prepend(card);
+        codeGrid.appendChild(card);
 
         try {
           JsBarcode(svg, textValue, {
@@ -1168,7 +1259,7 @@
         qrContainer.appendChild(qrBox);
         qrContainer.appendChild(label);
         card.appendChild(qrContainer);
-        codeGrid.prepend(card);
+        codeGrid.appendChild(card);
 
         try {
           new QRCode(qrBox, {
@@ -1205,11 +1296,7 @@
       }
 
       if (!textValue) {
-        if (addBatchToggle.checked && !mainVal) {
-          input.reportValidity();
-        } else {
-          input.reportValidity();
-        }
+        input.reportValidity();
         return;
       }
 
@@ -1222,14 +1309,13 @@
 
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
       const isFav = checkIsFavorited(targetType, textValue);
-      const success = renderCodeCard(id, targetType, textValue, isFav);
-
-      if (success) {
-        savedCodes.unshift({ id, type: targetType, value: textValue, isFav });
-        saveToLocalStorage();
-      } else {
-        alert(`Unable to generate code for this input.`);
-      }
+      
+      // Store in array (custom order: newest first at index 0)
+      savedCodes.unshift({ id, type: targetType, value: textValue, isFav });
+      
+      // Re-render display with current sort preference
+      refreshGridDisplay();
+      saveToLocalStorage();
 
       input.focus();
     }
@@ -1244,12 +1330,11 @@
       savedFavorites.forEach((fav, index) => {
         if (!isDuplicate(fav.type, fav.value)) {
           const id = (Date.now() + index).toString() + '-fav';
-          if (renderCodeCard(id, fav.type, fav.value, true)) {
-            savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
-          }
+          savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
         }
       });
 
+      refreshGridDisplay();
       saveToLocalStorage();
     }
 
