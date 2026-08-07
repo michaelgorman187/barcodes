@@ -478,7 +478,7 @@
       color: var(--text-color);
       padding: 24px 28px;
       border-radius: 10px;
-      max-width: 440px;
+      max-width: 460px;
       width: 90%;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-color);
@@ -539,8 +539,9 @@
 
     .modal-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .btn-confirm {
@@ -960,6 +961,19 @@
     </div>
   </div>
 
+  <!-- Load Collection Modal (Clear vs Append Choice) -->
+  <div id="loadCollectionModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Load Collection</h3>
+      <p>How would you like to load <strong id="loadCollectionTargetName"></strong>?</p>
+      <div class="modal-actions">
+        <button type="button" id="loadCancelBtn" class="btn btn-cancel">Cancel</button>
+        <button type="button" id="loadAppendBtn" class="btn btn-barcode">Append to Current</button>
+        <button type="button" id="loadReplaceBtn" class="btn btn-collection">Replace Current</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Delete Single Collection Caution Modal -->
   <div id="deleteCollectionModal" class="modal-overlay">
     <div class="modal-box">
@@ -1024,6 +1038,14 @@
     const collectionCancel = document.getElementById('collectionCancel');
     const collectionsContainer = document.getElementById('collectionsContainer');
     const collectionsList = document.getElementById('collectionsList');
+
+    // Load Collection Modal elements
+    const loadCollectionModal = document.getElementById('loadCollectionModal');
+    const loadCollectionTargetName = document.getElementById('loadCollectionTargetName');
+    const loadReplaceBtn = document.getElementById('loadReplaceBtn');
+    const loadAppendBtn = document.getElementById('loadAppendBtn');
+    const loadCancelBtn = document.getElementById('loadCancelBtn');
+    let collectionToLoad = null;
 
     // Delete Single Collection Modal elements
     const deleteCollectionModal = document.getElementById('deleteCollectionModal');
@@ -1155,7 +1177,7 @@
           saveToLocalStorage();
           renderCollectionsUI();
           
-          loadCollection(payload.name);
+          openLoadCollectionModal(payload.name);
 
           window.history.replaceState({}, document.title, window.location.pathname);
           
@@ -1215,22 +1237,42 @@
         chip.appendChild(deleteX);
 
         chip.addEventListener('click', () => {
-          loadCollection(name);
+          openLoadCollectionModal(name);
         });
 
         collectionsList.appendChild(chip);
       });
     }
 
-    // Load a selected collection onto the grid
-    function loadCollection(name) {
+    // Open prompt modal asking whether to clear or append
+    function openLoadCollectionModal(name) {
+      if (!savedCollections[name] || !savedCollections[name].length) return;
+      
+      // If screen is empty, simply load directly without prompting
+      if (savedCodes.length === 0) {
+        loadCollection(name, false);
+        return;
+      }
+
+      collectionToLoad = name;
+      loadCollectionTargetName.textContent = `"${name}"`;
+      loadCollectionModal.classList.add('active');
+    }
+
+    // Load a selected collection onto the grid (replace vs append)
+    function loadCollection(name, replaceCurrent = false) {
       const items = savedCollections[name];
       if (!items || !items.length) return;
 
-      savedCodes = [];
+      if (replaceCurrent) {
+        savedCodes = [];
+      }
 
       items.forEach((item, index) => {
-        const id = Date.now().toString() + index;
+        if (!replaceCurrent && isDuplicate(item.type, item.value)) {
+          return;
+        }
+        const id = Date.now().toString() + index + Math.random().toString(36).substr(2, 3);
         const isFav = checkIsFavorited(item.type, item.value);
         savedCodes.push({ id, type: item.type, value: item.value, isFav });
       });
@@ -1239,7 +1281,7 @@
       saveToLocalStorage();
     }
 
-    // Load state from local storage
+    // Load State from local storage
     function loadFromLocalStorage() {
       const savedHideState = localStorage.getItem(STORAGE_KEY_HIDE);
       if (savedHideState === 'true') {
@@ -1381,6 +1423,35 @@
     confirmModal.addEventListener('click', (e) => {
       if (e.target === confirmModal) {
         confirmModal.classList.remove('active');
+      }
+    });
+
+    /* Load Collection Modal Handler listeners */
+    loadReplaceBtn.addEventListener('click', () => {
+      if (collectionToLoad) {
+        loadCollection(collectionToLoad, true);
+      }
+      loadCollectionModal.classList.remove('active');
+      collectionToLoad = null;
+    });
+
+    loadAppendBtn.addEventListener('click', () => {
+      if (collectionToLoad) {
+        loadCollection(collectionToLoad, false);
+      }
+      loadCollectionModal.classList.remove('active');
+      collectionToLoad = null;
+    });
+
+    loadCancelBtn.addEventListener('click', () => {
+      loadCollectionModal.classList.remove('active');
+      collectionToLoad = null;
+    });
+
+    loadCollectionModal.addEventListener('click', (e) => {
+      if (e.target === loadCollectionModal) {
+        loadCollectionModal.classList.remove('active');
+        collectionToLoad = null;
       }
     });
 
