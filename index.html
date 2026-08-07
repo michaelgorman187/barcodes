@@ -293,23 +293,35 @@
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow);
       border-radius: 8px;
-      padding: 12px;
+      padding: 14px;
       display: none;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       z-index: 50;
-      min-width: 160px;
+      min-width: 240px;
     }
 
     .settings-menu.active {
       display: flex;
     }
 
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .settings-divider {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 2px 0;
+    }
+
     .toggle-label {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text-color);
       cursor: pointer;
@@ -318,10 +330,21 @@
     }
 
     .toggle-label input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       cursor: pointer;
       accent-color: #0066cc;
+    }
+
+    .nested-setting {
+      margin-left: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
     /* Select Dropdowns */
@@ -334,7 +357,7 @@
       color: var(--text-color);
     }
 
-    .sort-select {
+    .sort-select, .settings-select {
       padding: 6px 10px;
       font-size: 13px;
       font-weight: 600;
@@ -347,11 +370,16 @@
       transition: border-color 0.2s, background-color 0.2s;
     }
 
-    .sort-select:hover {
+    .settings-select {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .sort-select:hover, .settings-select:hover {
       border-color: #0066cc;
     }
 
-    .sort-select:focus {
+    .sort-select:focus, .settings-select:focus {
       border-color: #0066cc;
     }
 
@@ -410,6 +438,19 @@
 
     .collection-chip:hover {
       border-color: #0066cc;
+    }
+
+    /* Styling for the Special "All" Chip */
+    .collection-chip.all-chip {
+      font-weight: 700;
+      background-color: rgba(0, 102, 204, 0.12);
+      border-color: #0066cc;
+      color: #0066cc;
+    }
+
+    .collection-chip.all-chip:hover {
+      background-color: #0066cc;
+      color: #ffffff;
     }
 
     .collection-chip .share-chip {
@@ -889,7 +930,7 @@
       <button type="button" id="btnCollection" class="btn btn-collection">+ Collection</button>
     </div>
 
-    <!-- Options Row -->
+    <!-- Options Bar -->
     <div class="options-row">
       <div class="left-options">
         <!-- Settings Dropdown -->
@@ -909,6 +950,24 @@
               <input type="checkbox" id="hideToggle">
               Hide (Hover)
             </label>
+
+            <div class="settings-divider"></div>
+
+            <!-- Collection Behavior Settings -->
+            <div class="settings-group">
+              <label class="toggle-label">
+                <input type="checkbox" id="promptCollectionToggle" checked>
+                Prompt on collection click
+              </label>
+
+              <div id="defaultActionWrapper" class="nested-setting" style="display: none;">
+                <span>Default action:</span>
+                <select id="defaultActionSelect" class="settings-select">
+                  <option value="append">Append</option>
+                  <option value="replace">Replace (Clear)</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -1021,9 +1080,12 @@
     const darkModeToggle = document.getElementById('darkModeToggle');
     const sortSelect = document.getElementById('sortSelect');
 
-    // Settings Cog elements
+    // Settings Cog elements & Toggles
     const settingsCogBtn = document.getElementById('settingsCogBtn');
     const settingsMenu = document.getElementById('settingsMenu');
+    const promptCollectionToggle = document.getElementById('promptCollectionToggle');
+    const defaultActionWrapper = document.getElementById('defaultActionWrapper');
+    const defaultActionSelect = document.getElementById('defaultActionSelect');
     
     // Delete All Modal elements
     const deleteAllBtn = document.getElementById('deleteAllBtn');
@@ -1075,11 +1137,36 @@
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
     const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
     const STORAGE_KEY_SORT = 'saved_sort_preference';
+    const STORAGE_KEY_PROMPT_COLLECTION = 'saved_prompt_collection_preference';
+    const STORAGE_KEY_DEFAULT_COLLECTION_ACTION = 'saved_default_collection_action';
 
     // State Objects/Arrays
     let savedCodes = [];
     let savedFavorites = [];
     let savedCollections = {};
+
+    // Special reserved collection key
+    const SPECIAL_ALL_KEY = '__ALL_COLLECTIONS__';
+
+    // Helper: Get aggregated list of all items across all collections
+    function getAllCollectionsAggregated() {
+      const aggregated = [];
+      const seenMap = new Map();
+
+      Object.values(savedCollections).forEach(items => {
+        if (Array.isArray(items)) {
+          items.forEach(item => {
+            const key = `${item.type}:${item.value.toLowerCase()}`;
+            if (!seenMap.has(key)) {
+              seenMap.set(key, true);
+              aggregated.push(item);
+            }
+          });
+        }
+      });
+
+      return aggregated;
+    }
 
     // Helper: Natural alphanumeric comparison
     function compareAlphanumeric(a, b) {
@@ -1133,6 +1220,8 @@
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
       localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
       localStorage.setItem(STORAGE_KEY_SORT, sortSelect.value);
+      localStorage.setItem(STORAGE_KEY_PROMPT_COLLECTION, promptCollectionToggle.checked);
+      localStorage.setItem(STORAGE_KEY_DEFAULT_COLLECTION_ACTION, defaultActionSelect.value);
     }
 
     // Generate Shareable Link for a collection
@@ -1177,7 +1266,7 @@
           saveToLocalStorage();
           renderCollectionsUI();
           
-          openLoadCollectionModal(payload.name);
+          handleCollectionClick(payload.name);
 
           window.history.replaceState({}, document.title, window.location.pathname);
           
@@ -1202,6 +1291,21 @@
 
       collectionsContainer.style.display = 'block';
 
+      // Always prepend the "All" chip if there is at least one collection
+      const allChip = document.createElement('div');
+      allChip.className = 'collection-chip all-chip';
+      
+      const allLabel = document.createElement('span');
+      allLabel.textContent = 'All';
+      allChip.appendChild(allLabel);
+
+      allChip.addEventListener('click', () => {
+        handleCollectionClick(SPECIAL_ALL_KEY);
+      });
+
+      collectionsList.appendChild(allChip);
+
+      // Render custom collections
       names.forEach(name => {
         const chip = document.createElement('div');
         chip.className = 'collection-chip';
@@ -1237,31 +1341,44 @@
         chip.appendChild(deleteX);
 
         chip.addEventListener('click', () => {
-          openLoadCollectionModal(name);
+          handleCollectionClick(name);
         });
 
         collectionsList.appendChild(chip);
       });
     }
 
-    // Open prompt modal asking whether to clear or append
-    function openLoadCollectionModal(name) {
-      if (!savedCollections[name] || !savedCollections[name].length) return;
-      
-      // If screen is empty, simply load directly without prompting
+    // Decision function when a collection chip is clicked
+    function handleCollectionClick(name) {
+      const isAll = (name === SPECIAL_ALL_KEY);
+      const items = isAll ? getAllCollectionsAggregated() : savedCollections[name];
+
+      if (!items || !items.length) return;
+
+      const displayName = isAll ? 'All Collections' : `"${name}"`;
+
+      // If screen is empty, load directly without prompting
       if (savedCodes.length === 0) {
         loadCollection(name, false);
         return;
       }
 
-      collectionToLoad = name;
-      loadCollectionTargetName.textContent = `"${name}"`;
-      loadCollectionModal.classList.add('active');
+      // Check user setting: prompt or auto-action
+      if (promptCollectionToggle.checked) {
+        collectionToLoad = name;
+        loadCollectionTargetName.textContent = displayName;
+        loadCollectionModal.classList.add('active');
+      } else {
+        const replaceCurrent = (defaultActionSelect.value === 'replace');
+        loadCollection(name, replaceCurrent);
+      }
     }
 
     // Load a selected collection onto the grid (replace vs append)
     function loadCollection(name, replaceCurrent = false) {
-      const items = savedCollections[name];
+      const isAll = (name === SPECIAL_ALL_KEY);
+      const items = isAll ? getAllCollectionsAggregated() : savedCollections[name];
+
       if (!items || !items.length) return;
 
       if (replaceCurrent) {
@@ -1293,6 +1410,17 @@
       if (savedDarkState === 'true') {
         darkModeToggle.checked = true;
         document.body.classList.add('dark-mode');
+      }
+
+      const savedPromptState = localStorage.getItem(STORAGE_KEY_PROMPT_COLLECTION);
+      if (savedPromptState !== null) {
+        promptCollectionToggle.checked = (savedPromptState === 'true');
+      }
+      defaultActionWrapper.style.display = promptCollectionToggle.checked ? 'none' : 'flex';
+
+      const savedDefaultAction = localStorage.getItem(STORAGE_KEY_DEFAULT_COLLECTION_ACTION);
+      if (savedDefaultAction && ['append', 'replace'].includes(savedDefaultAction)) {
+        defaultActionSelect.value = savedDefaultAction;
       }
 
       const storedSort = localStorage.getItem(STORAGE_KEY_SORT);
@@ -1344,6 +1472,15 @@
       } else {
         document.body.classList.remove('dark-mode');
       }
+      saveToLocalStorage();
+    });
+
+    promptCollectionToggle.addEventListener('change', () => {
+      defaultActionWrapper.style.display = promptCollectionToggle.checked ? 'none' : 'flex';
+      saveToLocalStorage();
+    });
+
+    defaultActionSelect.addEventListener('change', () => {
       saveToLocalStorage();
     });
 
@@ -1495,6 +1632,11 @@
       const name = collectionNameInput.value.trim();
       if (!name) {
         collectionNameInput.reportValidity();
+        return;
+      }
+
+      if (name.toLowerCase() === 'all') {
+        alert('The name "All" is reserved for viewing all collections. Please choose a different name.');
         return;
       }
 
