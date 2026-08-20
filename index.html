@@ -6,7 +6,7 @@
   <title>Barcode & QR Code Generator</title>
 
   <!-- Inline SVG Favicon (Barcode Icon) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230066cc'/%3E%3Cpath d='M6 8h2v16H6zm4 0h3v16h-3zm5 0h1v16h-1zm3 0h4v16h-4zm5 0h1v16h-1zm3 0h2v16h-2z' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23000000'/%3E%3Cpath d='M6 8h2v16H6zm4 0h3v16h-3zm5 0h1v16h-1zm3 0h4v16h-4zm5 0h1v16h-1zm3 0h2v16h-2z' fill='%23ffffff'/%3E%3C/svg%3E">
   
   <!-- JsBarcode Library for standard barcodes -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -44,6 +44,21 @@
       --code-text: #000000;
     }
 
+    body.cyberpunk-mode {
+      --bg-color: #080811;
+      --card-bg: #121324;
+      --text-color: #00f0ff;
+      --text-muted: #70a0c0;
+      --border-color: #ff0055;
+      --shadow: 0 0 15px rgba(255, 0, 85, 0.3), 0 0 30px rgba(0, 240, 255, 0.15);
+      --input-bg: #1a1b30;
+      --input-border: #00f0ff;
+      --chip-bg: #22142b;
+      --chip-border: #ff0055;
+      --code-bg: #ffe600;
+      --code-text: #05050a;
+}
+
     * {
       box-sizing: border-box;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -52,16 +67,31 @@
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      padding: 30px 20px;
+      padding: 20px 12px;
       margin: 0 auto;
       max-width: 1600px;
       transition: background-color 0.25s ease, color 0.25s ease;
     }
 
+    @media (min-width: 600px) {
+      body {
+        padding: 30px 20px;
+      }
+    }
+
     h1 {
       text-align: center;
       color: var(--text-color);
-      margin-bottom: 24px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      font-size: 1.6rem;
+    }
+
+    @media (min-width: 600px) {
+      h1 {
+        margin-bottom: 24px;
+        font-size: 2rem;
+      }
     }
 
     /* Top Input Bar Layout */
@@ -70,13 +100,20 @@
       flex-direction: column;
       gap: 14px;
       background: var(--card-bg);
-      padding: 20px;
+      padding: 16px;
       border-radius: 10px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-color);
-      margin: 0 auto 32px auto;
+      margin: 0 auto 24px auto;
       max-width: 650px;
       transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    @media (min-width: 600px) {
+      .controls {
+        padding: 20px;
+        margin-bottom: 32px;
+      }
     }
 
     /* Input Wrapper & Batch Options */
@@ -85,19 +122,21 @@
       align-items: center;
       gap: 8px;
       width: 100%;
+      flex-wrap: wrap;
     }
 
     .input-wrapper {
       position: relative;
-      flex: 1;
+      flex: 1 1 240px;
       display: flex;
       align-items: center;
       gap: 6px;
+      width: 100%;
     }
 
     .input-wrapper input {
-      padding: 14px 40px 14px 16px;
-      font-size: 16px;
+      padding: 12px 36px 12px 14px;
+      font-size: 15px;
       background-color: var(--input-bg);
       color: var(--text-color);
       border: 1px solid var(--input-border);
@@ -108,18 +147,25 @@
 
     #codeInput {
       flex: 1;
+      min-width: 0;
       width: 100%;
     }
 
     #batchInput {
-      width: 130px;
+      width: 100px;
       display: none;
-      padding: 14px 12px;
+      padding: 12px 10px;
+    }
+
+    @media (min-width: 480px) {
+      #batchInput {
+        width: 130px;
+      }
     }
 
     .batch-slash {
       display: none;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
       color: var(--text-muted);
     }
@@ -155,6 +201,7 @@
     .batch-toggle-label {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       font-size: 13px;
       font-weight: 600;
@@ -166,6 +213,8 @@
       border: 1px solid var(--chip-border);
       padding: 12px 10px;
       border-radius: 6px;
+      flex: 0 0 auto;
+      min-height: 44px;
     }
 
     .batch-toggle-label input[type="checkbox"] {
@@ -177,16 +226,24 @@
 
     /* Button Group Container */
     .button-group {
-      display: flex;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
       width: 100%;
+    }
+
+    @media (min-width: 600px) {
+      .button-group {
+        display: flex;
+        gap: 10px;
+      }
     }
 
     /* Button Styling */
     .btn {
       flex: 1;
-      padding: 12px 10px;
-      font-size: 14px;
+      padding: 12px 8px;
+      font-size: 13px;
       font-weight: 600;
       color: white;
       border: none;
@@ -199,6 +256,14 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      min-height: 42px;
+    }
+
+    @media (min-width: 600px) {
+      .btn {
+        font-size: 14px;
+        padding: 12px 10px;
+      }
     }
 
     .btn:active {
@@ -242,7 +307,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       padding-top: 10px;
       border-top: 1px solid var(--border-color);
       flex-wrap: wrap;
@@ -251,8 +316,15 @@
     .left-options {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
       flex-wrap: wrap;
+      flex: 1;
+    }
+
+    @media (min-width: 600px) {
+      .left-options {
+        gap: 16px;
+      }
     }
 
     /* Settings Cog Menu Container */
@@ -272,6 +344,8 @@
       align-items: center;
       justify-content: center;
       transition: border-color 0.2s, background-color 0.2s;
+      height: 34px;
+      width: 38px;
     }
 
     .settings-cog-btn:hover {
@@ -352,14 +426,23 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text-color);
+      flex: 1;
+      max-width: 100%;
+    }
+
+    @media (min-width: 600px) {
+      .sort-wrapper {
+        font-size: 14px;
+        flex: initial;
+      }
     }
 
     .sort-select, .settings-select {
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 6px 8px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-color);
       background-color: var(--chip-bg);
@@ -368,11 +451,22 @@
       outline: none;
       cursor: pointer;
       transition: border-color 0.2s, background-color 0.2s;
+      flex: 1;
+      height: 34px;
+    }
+
+    @media (min-width: 600px) {
+      .sort-select {
+        font-size: 13px;
+        padding: 6px 10px;
+        flex: initial;
+      }
     }
 
     .settings-select {
       padding: 4px 8px;
       font-size: 12px;
+      height: auto;
     }
 
     .sort-select:hover, .settings-select:hover {
@@ -387,13 +481,22 @@
       background: transparent;
       border: none;
       color: #e53e3e;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       padding: 4px 8px;
       border-radius: 4px;
       transition: background-color 0.2s;
       white-space: nowrap;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    @media (min-width: 600px) {
+      .btn-danger-link {
+        font-size: 14px;
+      }
     }
 
     .btn-danger-link:hover {
@@ -418,7 +521,14 @@
     .collections-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    @media (min-width: 600px) {
+      .collections-list {
+        gap: 8px;
+      }
     }
 
     .collection-chip {
@@ -428,29 +538,72 @@
       background-color: var(--chip-bg);
       border: 1px solid var(--chip-border);
       color: var(--text-color);
-      padding: 4px 10px;
+      padding: 5px 10px;
       border-radius: 16px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+      user-select: none;
+    }
+
+    @media (min-width: 600px) {
+      .collection-chip {
+        font-size: 13px;
+        padding: 4px 10px;
+      }
     }
 
     .collection-chip:hover {
       border-color: #0066cc;
     }
 
-    /* Styling for the Special "All" Chip */
-    .collection-chip.all-chip {
+    /* Special "All" Chip & Edit Toggle Pill */
+    .collection-chip.all-chip, .collection-chip.edit-toggle-chip {
       font-weight: 700;
       background-color: rgba(0, 102, 204, 0.12);
       border-color: #0066cc;
       color: #0066cc;
     }
 
-    .collection-chip.all-chip:hover {
+    .collection-chip.all-chip:hover, .collection-chip.edit-toggle-chip:hover {
       background-color: #0066cc;
       color: #ffffff;
+    }
+
+    .collection-chip.edit-toggle-chip.is-active-mode {
+      background-color: #22c55e;
+      border-color: #16a34a;
+      color: #ffffff;
+    }
+
+    /* Floating/Bouncing Animation during Edit Mode */
+    @keyframes floatSubtle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .collections-list.is-edit-mode .collection-chip.custom-chip {
+      animation: floatSubtle 1.4s ease-in-out infinite;
+      border-style: dashed;
+      border-color: #0066cc;
+    }
+
+    .collections-list.is-edit-mode .collection-chip.custom-chip:nth-child(even) {
+      animation-delay: 0.3s;
+    }
+
+    /* Inline Input Replacement during rename */
+    .collection-rename-input {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-color);
+      background-color: var(--card-bg);
+      border: 2px solid #0066cc;
+      border-radius: 12px;
+      padding: 2px 8px;
+      outline: none;
+      max-width: 120px;
     }
 
     .collection-chip .share-chip {
@@ -507,6 +660,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
+      padding: 16px;
     }
 
     .modal-overlay.active {
@@ -517,26 +671,39 @@
     .modal-box {
       background: var(--card-bg);
       color: var(--text-color);
-      padding: 24px 28px;
+      padding: 20px 20px;
       border-radius: 10px;
       max-width: 460px;
-      width: 90%;
+      width: 100%;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-color);
       text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .modal-box {
+        padding: 24px 28px;
+      }
     }
 
     .modal-box h3 {
       margin-top: 0;
       margin-bottom: 12px;
       color: var(--text-color);
+      font-size: 1.2rem;
     }
 
     .modal-box p {
       color: var(--text-muted);
-      font-size: 14px;
+      font-size: 13px;
       margin-bottom: 16px;
       line-height: 1.4;
+    }
+
+    @media (min-width: 600px) {
+      .modal-box p {
+        font-size: 14px;
+      }
     }
 
     .warning-text {
@@ -559,7 +726,7 @@
     .modal-input {
       width: 100%;
       padding: 10px 14px;
-      font-size: 15px;
+      font-size: 14px;
       background-color: var(--input-bg);
       color: var(--text-color);
       border: 1px solid var(--input-border);
@@ -580,9 +747,13 @@
 
     .modal-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
       flex-wrap: wrap;
+    }
+
+    .modal-actions .btn {
+      flex: 1 1 120px;
     }
 
     .btn-confirm {
@@ -616,9 +787,23 @@
     /* Scalable Grid Layout */
     #codeGrid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+      gap: 12px;
       width: 100%;
+    }
+
+    @media (min-width: 480px) {
+      #codeGrid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #codeGrid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+      }
     }
 
     /* Code Card Container */
@@ -630,15 +815,22 @@
       justify-content: center;
       background: var(--card-bg);
       color: var(--text-color);
-      padding: 28px 12px 16px 12px;
+      padding: 24px 8px 12px 8px;
       border-radius: 8px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-color);
       animation: fadeIn 0.2s ease-in-out;
       min-width: 0;
-      min-height: 140px;
+      min-height: 130px;
       overflow: hidden;
       transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    @media (min-width: 480px) {
+      .code-card {
+        padding: 28px 12px 16px 12px;
+        min-height: 140px;
+      }
     }
 
     /* Duplicate Flash Animation */
@@ -665,7 +857,7 @@
     .barcode-canvas-container {
       background-color: var(--code-bg);
       border-radius: 4px;
-      padding: 6px;
+      padding: 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -673,12 +865,24 @@
       width: 100%;
     }
 
+    @media (min-width: 480px) {
+      .barcode-canvas-container {
+        padding: 6px;
+      }
+    }
+
     /* SVG styling for Barcodes */
     .code-card svg {
       width: 100%;
       height: auto;
-      max-height: 120px;
+      max-height: 100px;
       transition: opacity 0.2s ease;
+    }
+
+    @media (min-width: 480px) {
+      .code-card svg {
+        max-height: 120px;
+      }
     }
 
     .code-card svg rect {
@@ -694,24 +898,40 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      width: 100%;
       transition: opacity 0.2s ease;
     }
 
     .qr-wrapper img, .qr-wrapper canvas {
-      max-width: 130px;
-      max-height: 130px;
+      max-width: 100px;
+      max-height: 100px;
       background-color: var(--code-bg);
-      padding: 6px;
+      padding: 4px;
       border-radius: 4px;
     }
 
+    @media (min-width: 480px) {
+      .qr-wrapper img, .qr-wrapper canvas {
+        max-width: 130px;
+        max-height: 130px;
+        padding: 6px;
+      }
+    }
+
     .qr-label {
-      font-size: 13px;
+      font-size: 11px;
       color: var(--text-color);
       word-break: break-all;
       text-align: center;
-      margin-top: 4px;
+      margin-top: 2px;
+    }
+
+    @media (min-width: 480px) {
+      .qr-label {
+        font-size: 13px;
+        margin-top: 4px;
+      }
     }
 
     /* Chuck Testa Image Style */
@@ -726,14 +946,21 @@
 
     .chuck-img {
       width: 100%;
-      max-width: 150px;
-      height: 100px;
+      max-width: 120px;
+      height: 80px;
       object-fit: cover;
       border-radius: 6px;
     }
 
+    @media (min-width: 480px) {
+      .chuck-img {
+        max-width: 150px;
+        height: 100px;
+      }
+    }
+
     .chuck-label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
       color: #d97706;
       text-align: center;
@@ -746,9 +973,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
-      padding: 0 16px;
+      padding: 0 10px;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
@@ -756,13 +983,20 @@
     }
 
     .type-badge {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 12px;
       color: #ffffff;
+    }
+
+    @media (min-width: 480px) {
+      .type-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+      }
     }
 
     .type-badge.barcode {
@@ -779,22 +1013,28 @@
 
     .hidden-title {
       color: #ffffff;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       text-align: center;
       word-break: break-all;
     }
 
+    @media (min-width: 480px) {
+      .hidden-title {
+        font-size: 14px;
+      }
+    }
+
     /* Heart / Favorite Button */
     .fav-btn {
       position: absolute;
-      top: 6px;
-      left: 8px;
+      top: 4px;
+      left: 6px;
       background: transparent;
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 2px;
+      padding: 4px;
       line-height: 1;
       z-index: 4;
       display: flex;
@@ -821,15 +1061,15 @@
     /* Card Delete Button */
     .delete-btn {
       position: absolute;
-      top: 6px;
-      right: 8px;
+      top: 4px;
+      right: 6px;
       background: transparent;
       border: none;
       color: var(--text-muted);
       font-size: 20px;
       font-weight: bold;
       cursor: pointer;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
       line-height: 1;
       z-index: 4;
@@ -892,7 +1132,135 @@
 </head>
 <body>
 
-  <h1>Barcode & QR Code Generator</h1>
+<div class="barcode-header-container" style="max-width: 600px; margin: 0 auto;">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 100" width="600px" height="auto">
+    <defs>
+      <style>
+        .barcode-text {
+          font-family: 'Courier New', Courier, monospace;
+          font-weight: 800;
+          font-size: 11.5px;
+          fill: var(--text-color);
+          letter-spacing: 4px;
+        }
+        .meta-text {
+          font-family: system-ui, -apple-system, sans-serif;
+          font-weight: 600;
+          font-size: 7px;
+          fill: var(--text-color);
+          letter-spacing: 1.5px;
+        }
+      </style>
+    </defs>
+
+    <!-- Background Card (450x100) -->
+    <rect width="450" height="100" rx="8" fill="var(--bg-color)"/>
+
+    <!-- Top Flavour Text / Metadata -->
+    <text x="25" y="18" class="meta-text">FORMAT: CODE-128 / DUAL-MODE</text>
+    <text x="425" y="18" class="meta-text" text-anchor="end">AGENT 47 VERIFIED</text>
+
+    <!-- Barcode + Heading Block -->
+    <g transform="translate(25, 26)">
+      <!-- Left Guard Bars -->
+      <rect x="0" y="0" width="2" height="58" fill="var(--text-color)"/>
+      <rect x="3.5" y="0" width="1" height="58" fill="var(--text-color)"/>
+
+      <!-- Data Bars -->
+      <rect x="7.5" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="13.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="16.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="20" y="0" width="5" height="44" fill="var(--text-color)"/>
+      <rect x="27" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="31" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="34" y="0" width="3.5" height="44" fill="var(--text-color)"/>
+      <rect x="40" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="44" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="50.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="54" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="58.5" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="64.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="68" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="71" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="76" y="0" width="5.5" height="44" fill="var(--text-color)"/>
+      <rect x="83.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="87" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="91.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="94.5" y="0" width="3.5" height="44" fill="var(--text-color)"/>
+      <rect x="100" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="104.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="107.5" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="114" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="120" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="123" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="126" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="132" y="0" width="3.5" height="44" fill="var(--text-color)"/>
+      <rect x="137.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="140.5" y="0" width="5" height="44" fill="var(--text-color)"/>
+      <rect x="147.5" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="151.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="158" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="164" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="167" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="172" y="0" width="5.5" height="44" fill="var(--text-color)"/>
+      <rect x="179.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="183" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="187.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="190.5" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="197" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="203" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="206" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="209" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="215" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="220" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="223" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="229.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="233" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="237.5" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="243.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="246.5" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="250.5" y="0" width="5" height="44" fill="var(--text-color)"/>
+      <rect x="257.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="261" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="264" y="0" width="3.5" height="44" fill="var(--text-color)"/>
+      <rect x="269.5" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="274" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="277" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="283" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="287" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="290.5" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="297" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="300" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="305" y="0" width="5.5" height="44" fill="var(--text-color)"/>
+      <rect x="312.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="316" y="0" width="2.5" height="44" fill="var(--text-color)"/>
+      <rect x="320.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="323.5" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="329.5" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="333.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="336.5" y="0" width="5" height="44" fill="var(--text-color)"/>
+      <rect x="343.5" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="347" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="352" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="355" y="0" width="4" height="44" fill="var(--text-color)"/>
+      <rect x="361" y="0" width="2" height="44" fill="var(--text-color)"/>
+      <rect x="365" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="368.5" y="0" width="4.5" height="44" fill="var(--text-color)"/>
+      <rect x="375" y="0" width="1" height="44" fill="var(--text-color)"/>
+      <rect x="378" y="0" width="3" height="44" fill="var(--text-color)"/>
+      <rect x="383" y="0" width="5" height="44" fill="var(--text-color)"/>
+      <rect x="390" y="0" width="1.5" height="44" fill="var(--text-color)"/>
+      <rect x="393.5" y="0" width="1" height="44" fill="var(--text-color)"/>
+
+      <!-- Right Guard Bars -->
+      <rect x="396.5" y="0" width="1" height="58" fill="var(--text-color)"/>
+      <rect x="399" y="0" width="2" height="58" fill="var(--text-color)"/>
+
+      <!-- Heading Text (Framed by extended guard bars) -->
+      <text x="200" y="55" class="barcode-text" text-anchor="middle">BARCODE &amp; QR GENERATOR</text>
+    </g>
+  </svg>
+</div>
 
   <!-- Form Controls -->
   <form id="codeForm" class="controls">
@@ -1144,6 +1512,7 @@
     let savedCodes = [];
     let savedFavorites = [];
     let savedCollections = {};
+    let isCollectionEditMode = false;
 
     // Special reserved collection key
     const SPECIAL_ALL_KEY = '__ALL_COLLECTIONS__';
@@ -1279,70 +1648,158 @@
       }
     }
 
-    // Render Saved Collections Chips below options bar
+    // Helper: Rename Collection Key
+    function renameCollection(oldName, newName) {
+      const trimmedNewName = newName.trim();
+      
+      if (!trimmedNewName || trimmedNewName === oldName) return false;
+      
+      if (trimmedNewName.toLowerCase() === 'all') {
+        alert('The name "All" is reserved for viewing all collections.');
+        return false;
+      }
+
+      if (savedCollections[trimmedNewName]) {
+        alert(`A collection named "${trimmedNewName}" already exists.`);
+        return false;
+      }
+
+      const updatedCollections = {};
+      Object.keys(savedCollections).forEach(key => {
+        if (key === oldName) {
+          updatedCollections[trimmedNewName] = savedCollections[oldName];
+        } else {
+          updatedCollections[key] = savedCollections[key];
+        }
+      });
+
+      savedCollections = updatedCollections;
+      saveToLocalStorage();
+      renderCollectionsUI();
+      return true;
+    }
+
+    // Render Saved Collections Chips + Edit Toggle Button
     function renderCollectionsUI() {
       collectionsList.innerHTML = '';
       const names = Object.keys(savedCollections);
       
       if (names.length === 0) {
         collectionsContainer.style.display = 'none';
+        isCollectionEditMode = false;
         return;
       }
 
       collectionsContainer.style.display = 'block';
 
-      // Always prepend the "All" chip if there is at least one collection
+      if (isCollectionEditMode) {
+        collectionsList.classList.add('is-edit-mode');
+      } else {
+        collectionsList.classList.remove('is-edit-mode');
+      }
+
+      // Prepend "All" chip
       const allChip = document.createElement('div');
       allChip.className = 'collection-chip all-chip';
-      
-      const allLabel = document.createElement('span');
-      allLabel.textContent = 'All';
-      allChip.appendChild(allLabel);
-
+      allChip.innerHTML = '<span>All</span>';
       allChip.addEventListener('click', () => {
-        handleCollectionClick(SPECIAL_ALL_KEY);
+        if (!isCollectionEditMode) {
+          handleCollectionClick(SPECIAL_ALL_KEY);
+        }
       });
-
       collectionsList.appendChild(allChip);
 
-      // Render custom collections
+      // Prepend Edit/Done toggle button styled like the "All" pill
+      const editToggleChip = document.createElement('div');
+      editToggleChip.className = `collection-chip edit-toggle-chip ${isCollectionEditMode ? 'is-active-mode' : ''}`;
+      editToggleChip.innerHTML = `<span>${isCollectionEditMode ? '✓ Done' : 'Edit'}</span>`;
+      
+      editToggleChip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isCollectionEditMode = !isCollectionEditMode;
+        renderCollectionsUI();
+      });
+      collectionsList.appendChild(editToggleChip);
+
+      // Custom Collection Chips
       names.forEach(name => {
         const chip = document.createElement('div');
-        chip.className = 'collection-chip';
+        chip.className = 'collection-chip custom-chip';
         
         const labelText = document.createElement('span');
+        labelText.className = 'collection-label';
         labelText.textContent = name;
         chip.appendChild(labelText);
 
-        // Share button (SVG)
-        const shareBtn = document.createElement('span');
-        shareBtn.className = 'share-chip';
-        shareBtn.innerHTML = SVG_SHARE_ICON;
-        shareBtn.title = `Share collection "${name}"`;
-        shareBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openShareModal(name);
-        });
-        chip.appendChild(shareBtn);
+        if (!isCollectionEditMode) {
+          // Share Icon
+          const shareBtn = document.createElement('span');
+          shareBtn.className = 'share-chip';
+          shareBtn.innerHTML = SVG_SHARE_ICON;
+          shareBtn.title = `Share collection "${name}"`;
+          shareBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openShareModal(name);
+          });
+          chip.appendChild(shareBtn);
 
-        // Delete button
-        const deleteX = document.createElement('span');
-        deleteX.className = 'delete-chip';
-        deleteX.innerHTML = '&times;';
-        deleteX.title = `Delete collection "${name}"`;
-        
-        deleteX.addEventListener('click', (e) => {
-          e.stopPropagation();
-          collectionToDelete = name;
-          deleteCollectionTargetName.textContent = `"${name}"`;
-          deleteCollectionModal.classList.add('active');
-        });
+          // Delete Icon
+          const deleteX = document.createElement('span');
+          deleteX.className = 'delete-chip';
+          deleteX.innerHTML = '&times;';
+          deleteX.title = `Delete collection "${name}"`;
+          deleteX.addEventListener('click', (e) => {
+            e.stopPropagation();
+            collectionToDelete = name;
+            deleteCollectionTargetName.textContent = `"${name}"`;
+            deleteCollectionModal.classList.add('active');
+          });
+          chip.appendChild(deleteX);
 
-        chip.appendChild(deleteX);
+          chip.addEventListener('click', () => {
+            handleCollectionClick(name);
+          });
+        } else {
+          // Edit Mode Click Handler -> Inline input transformation
+          chip.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            if (chip.querySelector('input')) return; // Already editing this chip
 
-        chip.addEventListener('click', () => {
-          handleCollectionClick(name);
-        });
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.className = 'collection-rename-input';
+            inputField.value = name;
+
+            labelText.replaceWith(inputField);
+            inputField.focus();
+            inputField.select();
+
+            const commitRename = () => {
+              const updatedVal = inputField.value.trim();
+              if (updatedVal && updatedVal !== name) {
+                if (!renameCollection(name, updatedVal)) {
+                  renderCollectionsUI();
+                }
+              } else {
+                renderCollectionsUI();
+              }
+            };
+
+            inputField.addEventListener('keydown', (ev) => {
+              if (ev.key === 'Enter') {
+                ev.preventDefault();
+                commitRename();
+              } else if (ev.key === 'Escape') {
+                renderCollectionsUI();
+              }
+            });
+
+            inputField.addEventListener('blur', () => {
+              commitRename();
+            });
+          });
+        }
 
         collectionsList.appendChild(chip);
       });
