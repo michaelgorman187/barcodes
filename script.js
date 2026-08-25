@@ -1,3 +1,4 @@
+
     const form = document.getElementById('codeForm');
     const input = document.getElementById('codeInput');
     const batchInput = document.getElementById('batchInput');
