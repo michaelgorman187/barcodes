@@ -28,7 +28,7 @@
       --code-text: #000000;
     }
 
-    body.cyberpunk-mode {
+    body.punk-mode {
       --bg-color: #080811;
       --card-bg: #121324;
       --text-color: #00f0ff;
@@ -39,9 +39,49 @@
       --input-border: #00f0ff;
       --chip-bg: #22142b;
       --chip-border: #ff0055;
-      --code-bg: #ffe600;
+      --code-bg: #ffffff;
       --code-text: #05050a;
-}
+        }
+
+    body.punk-mode .btn {
+    background-color: var(--chip-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--chip-border) !important;
+    box-shadow: var(--shadow) !important;
+    }
+
+    /* Cyberpunk Button Hover State */
+    body.punk-mode .btn:hover {
+    background-color: var(--chip-border);
+    color: #ffffff;
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.8), 0 0 40px rgba(0, 240, 255, 0.5);
+    cursor: pointer;
+    animation: angled-flash 0.3s ease-in-out;
+    }
+
+    /* Angled Flash Keyframe Animation */
+    @keyframes angled-flash {
+    0% {
+        transform: skewX(0deg);
+        filter: brightness(1);
+    }
+    25% {
+        transform: skewX(-8deg) scale(1.02);
+        filter: brightness(1.8);
+    }
+    50% {
+        transform: skewX(5deg);
+        filter: brightness(0.8);
+    }
+    75% {
+        transform: skewX(-2deg);
+        filter: brightness(1.4);
+    }
+    100% {
+        transform: skewX(0deg);
+        filter: brightness(1);
+    }
+    }
 
     * {
       box-sizing: border-box;

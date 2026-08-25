@@ -13,6 +13,7 @@
     const codeGrid = document.getElementById('codeGrid');
     const hideToggle = document.getElementById('hideToggle');
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const cyperPunkToggle = document.getElementById('cyberPunkToggle');
     const sortSelect = document.getElementById('sortSelect');
 
     // Settings Cog elements & Toggles
@@ -69,6 +70,7 @@
     const STORAGE_KEY_CODES = 'saved_generated_codes';
     const STORAGE_KEY_HIDE = 'saved_hide_preference';
     const STORAGE_KEY_DARK = 'saved_dark_mode';
+    const STORAGE_KEY_PUNK ='saved_punk_mode';
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
     const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
     const STORAGE_KEY_SORT = 'saved_sort_preference';
@@ -153,6 +155,7 @@
       localStorage.setItem(STORAGE_KEY_CODES, JSON.stringify(savedCodes));
       localStorage.setItem(STORAGE_KEY_HIDE, hideToggle.checked);
       localStorage.setItem(STORAGE_KEY_DARK, darkModeToggle.checked);
+      localStorage.setItem(STORAGE_KEY_PUNK, cyberPunkToggle.checked);
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
       localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
       localStorage.setItem(STORAGE_KEY_SORT, sortSelect.value);
@@ -436,6 +439,12 @@
         document.body.classList.add('dark-mode');
       }
 
+      const savedPunkState = localStorage.getItem(STORAGE_KEY_PUNK);
+      if (savedPunkState === 'true') {
+        cyperPunkToggle.checked = true;
+        document.body.classList.add('punk-mode');
+      }
+
       const savedPromptState = localStorage.getItem(STORAGE_KEY_PROMPT_COLLECTION);
       if (savedPromptState !== null) {
         promptCollectionToggle.checked = (savedPromptState === 'true');
@@ -490,14 +499,29 @@
       }
     });
 
-    darkModeToggle.addEventListener('change', () => {
-      if (darkModeToggle.checked) {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
-      }
-      saveToLocalStorage();
-    });
+darkModeToggle.addEventListener('change', () => {
+  if (darkModeToggle.checked) {
+    document.body.classList.add('dark-mode');
+    // Uncheck Cyberpunk and remove its theme class
+    cyperPunkToggle.checked = false;
+    document.body.classList.remove('punk-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  saveToLocalStorage();
+});
+
+cyperPunkToggle.addEventListener('change', () => {
+  if (cyperPunkToggle.checked) {
+    document.body.classList.add('punk-mode');
+    // Uncheck Dark Mode and remove its theme class
+    darkModeToggle.checked = false;
+    document.body.classList.remove('dark-mode');
+  } else {
+    document.body.classList.remove('punk-mode');
+  }
+  saveToLocalStorage();
+});
 
     promptCollectionToggle.addEventListener('change', () => {
       defaultActionWrapper.style.display = promptCollectionToggle.checked ? 'none' : 'flex';
