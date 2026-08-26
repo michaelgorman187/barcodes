@@ -11,6 +11,10 @@
       --chip-border: #cbd5e1;
       --code-bg: #ffffff;
       --code-text: #000000;
+      --barcode-pip:#0066cc;
+      --qr-pip:#2e7d32;
+      --chuck-pip:#d97706;
+      --badge-text: #ffffff;
     }
 
     body.dark-mode {
@@ -26,6 +30,10 @@
       --chip-border: #475569;
       --code-bg: #ffffff;
       --code-text: #000000;
+      --barcode-pip:#0066cc;
+      --qr-pip:#2e7d32;
+      --chuck-pip:#d97706;
+      --badge-text: #ffffff;
     }
 
     body.punk-mode {
@@ -41,46 +49,84 @@
       --chip-border: #ff0055;
       --code-bg: #ffffff;
       --code-text: #05050a;
+      --barcode-pip: #ffe600;
+      --qr-pip: #ccff00;   
+      --chuck-pip: #ffb700; 
+      --badge-text: #000000;
         }
 
+
+    /* Container clip setup */
     body.punk-mode .btn {
-    background-color: var(--chip-bg) !important;
-    color: var(--text-color) !important;
-    border: 1px solid var(--chip-border) !important;
-    box-shadow: var(--shadow) !important;
-    }
+        position: relative;
+        overflow: hidden;
+        background-color: var(--chip-bg);
+        color: var(--text-color);
+        border: 1px solid var(--chip-border);
+        box-shadow: var(--shadow);
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
 
-    /* Cyberpunk Button Hover State */
+    /* Hover State: Grows bigger, flips border to neon blue */
     body.punk-mode .btn:hover {
-    background-color: var(--chip-border);
-    color: #ffffff;
-    box-shadow: 0 0 20px rgba(255, 0, 85, 0.8), 0 0 40px rgba(0, 240, 255, 0.5);
-    cursor: pointer;
-    animation: angled-flash 0.3s ease-in-out;
+        transform: scale(1.05);
+        border-color: var(--text-color); /* #00f0ff neon blue */
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.6), 0 0 30px rgba(0, 240, 255, 0.3);
+        cursor: pointer;
+        }
+
+    /* The Angled Yellow Flash Streak */
+    body.punk-mode .btn::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -75%;
+        width: 50%;
+        height: 200%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            var(--code-bg), /* #ffe600 neon yellow */
+            transparent
+        );
+        transform: rotate(25deg);
+        opacity: 0;
+        pointer-events: none;
+        }
+
+    /* Trigger the light streak animation on hover */
+    body.punk-mode .btn:hover::after {
+        animation: flash-streak 0.45s ease-in-out forwards;
+        }
+
+    /* Animation: Sweeps across the button at an angle */
+    @keyframes flash-streak {
+        0% {
+            left: -75%;
+            opacity: 0;
+        }
+        20% {
+            opacity: 1;
+        }
+        100% {
+            left: 125%;
+            opacity: 0;
+        }
     }
 
-    /* Angled Flash Keyframe Animation */
-    @keyframes angled-flash {
-    0% {
-        transform: skewX(0deg);
-        filter: brightness(1);
+    /* Target only the barcode bars inside the group */
+    body.punk-mode g rect[height="44"],
+    body.punk-mode g rect[height="58"] {
+    fill: var(--text-color);
+    transition: fill 0.5s ease-out;
     }
-    25% {
-        transform: skewX(-8deg) scale(1.02);
-        filter: brightness(1.8);
-    }
-    50% {
-        transform: skewX(5deg);
-        filter: brightness(0.8);
-    }
-    75% {
-        transform: skewX(-2deg);
-        filter: brightness(1.4);
-    }
-    100% {
-        transform: skewX(0deg);
-        filter: brightness(1);
-    }
+
+    /* Hover effect on barcode lines only */
+    body.punk-mode g rect[height="44"]:hover,
+    body.punk-mode g rect[height="58"]:hover {
+    fill: #ff0055 !important;
+    transition: fill 0s;
+    cursor: pointer;
     }
 
     * {
@@ -1013,7 +1059,7 @@
       letter-spacing: 0.5px;
       padding: 2px 6px;
       border-radius: 12px;
-      color: #ffffff;
+      color: var(--badge-text);
     }
 
     @media (min-width: 480px) {
@@ -1024,15 +1070,15 @@
     }
 
     .type-badge.barcode {
-      background-color: #0066cc;
+      background-color: var(--barcode-pip);
     }
 
     .type-badge.qrcode {
-      background-color: #2e7d32;
+      background-color: var(--qr-pip);
     }
 
     .type-badge.chuck {
-      background-color: #d97706;
+      background-color: var(--chuck-pip);
     }
 
     .hidden-title {
