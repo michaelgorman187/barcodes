@@ -129,6 +129,30 @@
     cursor: pointer;
     }
 
+    /* Enable relative positioning & transition on pips in Punk Mode */
+body.punk-mode [style*="--barcode-pip"],
+body.punk-mode [style*="--qr-pip"],
+body.punk-mode [style*="--chuck-pip"],
+body.punk-mode .pip { /* Included class fallback if you use one */
+  position: relative;
+  animation: cyberpunk-pip-pulse 2s infinite ease-in-out;
+}
+
+/* Keyframes for the Neon Pulse */
+@keyframes cyberpunk-pip-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--barcode-pip, #ffe600),
+                0 0 10px var(--barcode-pip, #ffe600);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 12px var(--barcode-pip, #ffe600),
+                0 0 25px var(--barcode-pip, #ffe600),
+                0 0 35px var(--qr-pip, #ccff00);
+    filter: brightness(1.3);
+  }
+}
+
     * {
       box-sizing: border-box;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -240,6 +264,19 @@
       color: var(--text-muted);
     }
 
+    .desc-input {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.25s;
+    }
+
+    .desc-input:focus,
     .input-wrapper input:focus {
       border-color: #0066cc;
     }
@@ -923,6 +960,25 @@
       }
     }
 
+    /* Optional description heading on each card */
+    .card-description {
+      width: 100%;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.25;
+      text-align: center;
+      color: var(--text-color);
+      overflow-wrap: anywhere;
+      transition: opacity 0.2s ease;
+    }
+
+    @media (min-width: 480px) {
+      .card-description {
+        font-size: 15px;
+      }
+    }
+
     /* Code Canvas Container - Always Scannable White Background */
     .barcode-canvas-container {
       background-color: var(--code-bg);
@@ -1158,7 +1214,8 @@
 
     #codeGrid.hide-active .code-card .barcode-canvas-container,
     #codeGrid.hide-active .code-card .qr-wrapper,
-    #codeGrid.hide-active .code-card .chuck-wrapper {
+    #codeGrid.hide-active .code-card .chuck-wrapper,
+    #codeGrid.hide-active .code-card .card-description {
       opacity: 0;
     }
 
@@ -1176,7 +1233,8 @@
 
     #codeGrid.hide-active .code-card:hover .barcode-canvas-container,
     #codeGrid.hide-active .code-card:hover .qr-wrapper,
-    #codeGrid.hide-active .code-card:hover .chuck-wrapper {
+    #codeGrid.hide-active .code-card:hover .chuck-wrapper,
+    #codeGrid.hide-active .code-card:hover .card-description {
       opacity: 1;
     }
 
@@ -1197,4 +1255,191 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ---------- Print ---------- */
+    .right-options {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-print-link {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      white-space: nowrap;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (min-width: 600px) {
+      .btn-print-link {
+        font-size: 14px;
+      }
+    }
+
+    .btn-print-link:hover {
+      background-color: var(--chip-bg);
+    }
+
+    /* Print output is never shown on screen */
+    #printArea {
+      display: none;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
+
+    @media print {
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* Hide the whole app, show only the print area */
+      body.is-printing > *:not(#printArea) {
+        display: none !important;
+      }
+
+      /* Always print in light-mode colours (saves ink in Dark / Cyberpunk) */
+      #printArea {
+        --bg-color: #ffffff;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --text-muted: #666666;
+        --border-color: #dcdfe6;
+        --shadow: none;
+        --code-bg: #ffffff;
+        --code-text: #000000;
+      }
+
+      body.is-printing #printArea {
+        display: block !important;
+        color: #000000;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* QRCode.js renders a canvas + img; print the canvas (always ready) */
+      #printArea .print-qr img { display: none !important; }
+      #printArea .print-qr canvas { display: block !important; }
+
+      #printArea .print-label {
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 700;
+        text-align: center;
+        word-break: break-all;
+        color: #000000;
+      }
+
+      /* Grid mode: copies of the on-screen cards, 4 across then down.
+         Selector must outrank "body.is-printing #printArea" (display:block) */
+      body.is-printing #printArea.print-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-flow: row;
+        gap: 4mm;
+      }
+
+      #printArea.print-grid .print-card {
+        animation: none;
+        box-shadow: none;
+        min-height: 140px;
+        padding: 6mm 3mm 3mm;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      /* Same QR square size as the site's cards */
+      #printArea.print-grid .print-card .qr-wrapper img {
+        width: 130px;
+        height: 130px;
+        max-width: 100%;
+        max-height: none;
+        padding: 6px;
+      }
+
+      #printArea.print-grid .print-card .card-description {
+        font-size: 11pt;
+        margin-bottom: 2mm;
+      }
+
+      #printArea.print-grid .print-card .barcode-canvas-container,
+      #printArea.print-grid .print-card .qr-wrapper {
+        opacity: 1 !important;
+      }
+
+      #printArea.print-grid .print-card .qr-wrapper img {
+        display: block !important;
+      }
+
+      /* Large mode: one code per A4 page */
+      #printArea.print-large .print-page {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8mm;
+        height: 270mm;
+        break-after: page;
+        page-break-after: always;
+        break-inside: avoid;
+      }
+
+      #printArea.print-large .print-page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      /* Bordered card centred on the A4 page */
+      #printArea.print-large .print-a4-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6mm;
+        width: 140mm;
+        padding: 12mm 10mm;
+        border: 2px solid #333333;
+        border-radius: 6mm;
+        background: #ffffff;
+      }
+
+      #printArea.print-large .print-heading {
+        margin: 0;
+        font-size: 26pt;
+        font-weight: 800;
+        line-height: 1.15;
+        text-align: center;
+        color: #000000;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      #printArea.print-large svg {
+        width: 100%;
+        height: auto;
+        max-height: 70mm;
+      }
+
+      #printArea.print-large .print-qr canvas {
+        width: 100mm !important;
+        height: 100mm !important;
+      }
+
+      #printArea.print-large .print-label {
+        font-size: 16pt;
+        max-width: 100%;
+      }
     }

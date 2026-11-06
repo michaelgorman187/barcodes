@@ -2,6 +2,7 @@
     const form = document.getElementById('codeForm');
     const input = document.getElementById('codeInput');
     const batchInput = document.getElementById('batchInput');
+    const descInput = document.getElementById('descInput');
     const batchSlash = document.getElementById('batchSlash');
     const addBatchToggle = document.getElementById('addBatchToggle');
     const clearInputBtn = document.getElementById('clearInputBtn');
@@ -58,6 +59,14 @@
     const shareUrlInput = document.getElementById('shareUrlInput');
     const shareCopyBtn = document.getElementById('shareCopyBtn');
     const shareCloseBtn = document.getElementById('shareCloseBtn');
+
+    // Print elements
+    const printBtn = document.getElementById('printBtn');
+    const printModal = document.getElementById('printModal');
+    const printGridBtn = document.getElementById('printGridBtn');
+    const printLargeBtn = document.getElementById('printLargeBtn');
+    const printCancelBtn = document.getElementById('printCancelBtn');
+    const printArea = document.getElementById('printArea');
 
     // SVG String Templates
     const SVG_SHARE_ICON = `<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`;
@@ -130,7 +139,7 @@
       const itemsToRender = getSortedCodes();
       
       itemsToRender.forEach(item => {
-        renderCodeCard(item.id, item.type, item.value, item.isFav || false);
+        renderCodeCard(item.id, item.type, item.value, item.isFav || false, item.description || '');
       });
     }
 
@@ -418,7 +427,7 @@
         }
         const id = Date.now().toString() + index + Math.random().toString(36).substr(2, 3);
         const isFav = checkIsFavorited(item.type, item.value);
-        savedCodes.push({ id, type: item.type, value: item.value, isFav });
+        savedCodes.push({ id, type: item.type, value: item.value, description: item.description || '', isFav });
       });
 
       refreshGridDisplay();
@@ -546,16 +555,18 @@ cyperPunkToggle.addEventListener('change', () => {
     });
 
     function updateClearButtonVisibility() {
-      const hasContent = input.value.trim() || (addBatchToggle.checked && batchInput.value.trim());
+      const hasContent = input.value.trim() || (addBatchToggle.checked && batchInput.value.trim()) || descInput.value.trim();
       clearInputBtn.style.display = hasContent ? 'block' : 'none';
     }
 
     input.addEventListener('input', updateClearButtonVisibility);
     batchInput.addEventListener('input', updateClearButtonVisibility);
+    descInput.addEventListener('input', updateClearButtonVisibility);
 
     clearInputBtn.addEventListener('click', () => {
       input.value = '';
       batchInput.value = '';
+      descInput.value = '';
       updateClearButtonVisibility();
       input.focus();
     });
@@ -690,7 +701,8 @@ cyperPunkToggle.addEventListener('change', () => {
 
       savedCollections[name] = savedCodes.map(item => ({
         type: item.type,
-        value: item.value
+        value: item.value,
+        description: item.description || ''
       }));
 
       saveToLocalStorage();
@@ -729,6 +741,9 @@ cyperPunkToggle.addEventListener('change', () => {
       const codeItem = savedCodes.find(item => item.id === id);
       if (codeItem) {
         codeItem.isFav = index === -1;
+        if (index === -1 && codeItem.description) {
+          savedFavorites[savedFavorites.length - 1].description = codeItem.description;
+        }
       }
 
       saveToLocalStorage();
@@ -738,7 +753,7 @@ cyperPunkToggle.addEventListener('change', () => {
       return savedFavorites.some(fav => fav.type === type && fav.value.toLowerCase() === value.toLowerCase());
     }
 
-    function renderCodeCard(id, codeType, textValue, isFavInitial = false) {
+    function renderCodeCard(id, codeType, textValue, isFavInitial = false, description = '') {
       const card = document.createElement('div');
       card.className = 'code-card';
       card.dataset.id = id;
@@ -785,6 +800,15 @@ cyperPunkToggle.addEventListener('change', () => {
         saveToLocalStorage();
       });
       card.appendChild(deleteBtn);
+
+      // Optional description shown as a bold heading above the code
+      if (description) {
+        const descHeading = document.createElement('div');
+        descHeading.className = 'card-description';
+        descHeading.textContent = description;
+        descHeading.title = description;
+        card.appendChild(descHeading);
+      }
 
       if (codeType === 'chuck') {
         const chuckWrapper = document.createElement('div');
@@ -888,7 +912,8 @@ cyperPunkToggle.addEventListener('change', () => {
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 4);
       const isFav = checkIsFavorited(targetType, textValue);
       
-      savedCodes.unshift({ id, type: targetType, value: textValue, isFav });
+      const description = descInput.value.trim();
+      savedCodes.unshift({ id, type: targetType, value: textValue, description, isFav });
       
       refreshGridDisplay();
       saveToLocalStorage();
@@ -905,13 +930,146 @@ cyperPunkToggle.addEventListener('change', () => {
       savedFavorites.forEach((fav, index) => {
         if (!isDuplicate(fav.type, fav.value)) {
           const id = (Date.now() + index).toString() + '-fav';
-          savedCodes.unshift({ id, type: fav.type, value: fav.value, isFav: true });
+          savedCodes.unshift({ id, type: fav.type, value: fav.value, description: fav.description || '', isFav: true });
         }
       });
 
       refreshGridDisplay();
       saveToLocalStorage();
     }
+
+    /* ---------- Printing ---------- */
+
+    // Only real barcodes / QR codes are printable (skips easter eggs)
+    function getPrintableCodes() {
+      return getSortedCodes().filter(item => item.type === 'barcode' || item.type === 'qrcode');
+    }
+
+    // Large mode: fresh, black-on-white render of a code sized for A4
+    function buildPrintItem(item, large) {
+      const cell = document.createElement('div');
+      cell.className = large ? 'print-page' : 'print-cell';
+
+      // Optional description printed as a bold heading above the code
+      if (large && item.description) {
+        const heading = document.createElement('h2');
+        heading.className = 'print-heading';
+        heading.textContent = item.description;
+        cell.appendChild(heading);
+      }
+
+      if (item.type === 'barcode') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        cell.appendChild(svg);
+        try {
+          JsBarcode(svg, item.value, {
+            format: 'CODE128',
+            lineColor: '#000000',
+            background: '#ffffff',
+            width: large ? 4 : 2,
+            height: large ? 260 : 70,
+            displayValue: true,
+            fontSize: large ? 40 : 14,
+            margin: large ? 10 : 4
+          });
+        } catch (err) {
+          return null;
+        }
+      } else {
+        const qrBox = document.createElement('div');
+        qrBox.className = 'print-qr';
+        cell.appendChild(qrBox);
+        try {
+          new QRCode(qrBox, {
+            text: item.value,
+            width: large ? 1024 : 300,
+            height: large ? 1024 : 300,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } catch (err) {
+          return null;
+        }
+        const label = document.createElement('div');
+        label.className = 'print-label';
+        label.textContent = item.value;
+        cell.appendChild(label);
+      }
+
+      // A4: wrap everything in a bordered card centred on the page
+      if (large) {
+        const a4Card = document.createElement('div');
+        a4Card.className = 'print-a4-card';
+        while (cell.firstChild) a4Card.appendChild(cell.firstChild);
+        cell.appendChild(a4Card);
+      }
+
+      return cell;
+    }
+
+    // Grid mode: copy the on-screen card so the print matches the site
+    function cloneCardForPrint(item) {
+      const original = codeGrid.querySelector(`.code-card[data-id="${item.id}"]`);
+      if (!original) return buildPrintItem(item, false);
+
+      const clone = original.cloneNode(true);
+      clone.classList.remove('duplicate-highlight');
+      clone.classList.add('print-card');
+      clone.removeAttribute('data-id');
+      clone.querySelectorAll('.fav-btn, .delete-btn, .hidden-overlay').forEach(el => el.remove());
+
+      // Cloned canvases come out blank, so swap the QR canvas for an image of it
+      const originalCanvas = original.querySelector('canvas');
+      const clonedCanvas = clone.querySelector('canvas');
+      if (originalCanvas && clonedCanvas) {
+        const img = document.createElement('img');
+        img.src = originalCanvas.toDataURL('image/png');
+        img.alt = item.value;
+        clone.querySelectorAll('.qr-wrapper img').forEach(el => el.remove());
+        clonedCanvas.replaceWith(img);
+      }
+
+      return clone;
+    }
+
+    function printCodes(large) {
+      const items = getPrintableCodes();
+      printModal.classList.remove('active');
+      if (items.length === 0) return;
+
+      printArea.innerHTML = '';
+      printArea.className = large ? 'print-large' : 'print-grid';
+      items.forEach(item => {
+        const el = large ? buildPrintItem(item, true) : cloneCardForPrint(item);
+        if (el) printArea.appendChild(el);
+      });
+
+      document.body.classList.add('is-printing');
+      // Give the browser a moment to lay out the freshly rendered codes
+      setTimeout(() => window.print(), 100);
+    }
+
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('is-printing');
+      printArea.innerHTML = '';
+      printArea.className = '';
+    });
+
+    printBtn.addEventListener('click', () => {
+      if (getPrintableCodes().length === 0) {
+        alert('There are no barcodes or QR codes on screen to print.');
+        return;
+      }
+      printModal.classList.add('active');
+    });
+
+    printGridBtn.addEventListener('click', () => printCodes(false));
+    printLargeBtn.addEventListener('click', () => printCodes(true));
+    printCancelBtn.addEventListener('click', () => printModal.classList.remove('active'));
+    printModal.addEventListener('click', (e) => {
+      if (e.target === printModal) printModal.classList.remove('active');
+    });
 
     btnBarcode.addEventListener('click', () => handleCreateCode('barcode'));
     btnQR.addEventListener('click', () => handleCreateCode('qrcode'));
