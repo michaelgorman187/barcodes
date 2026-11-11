@@ -5,6 +5,7 @@
     const descInput = document.getElementById('descInput');
     const batchSlash = document.getElementById('batchSlash');
     const addBatchToggle = document.getElementById('addBatchToggle');
+    const clipboardToggle = document.getElementById('clipboardToggle');
     const clearInputBtn = document.getElementById('clearInputBtn');
     
     const btnBarcode = document.getElementById('btnBarcode');
@@ -83,6 +84,7 @@
     const STORAGE_KEY_FAVS = 'saved_favorite_codes';
     const STORAGE_KEY_COLLECTIONS = 'saved_collections_list';
     const STORAGE_KEY_SORT = 'saved_sort_preference';
+    const STORAGE_KEY_CLIPBOARD = 'saved_clipboard_mode';
     const STORAGE_KEY_PROMPT_COLLECTION = 'saved_prompt_collection_preference';
     const STORAGE_KEY_DEFAULT_COLLECTION_ACTION = 'saved_default_collection_action';
 
@@ -168,6 +170,7 @@
       localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(savedFavorites));
       localStorage.setItem(STORAGE_KEY_COLLECTIONS, JSON.stringify(savedCollections));
       localStorage.setItem(STORAGE_KEY_SORT, sortSelect.value);
+      localStorage.setItem(STORAGE_KEY_CLIPBOARD, clipboardToggle.checked);
       localStorage.setItem(STORAGE_KEY_PROMPT_COLLECTION, promptCollectionToggle.checked);
       localStorage.setItem(STORAGE_KEY_DEFAULT_COLLECTION_ACTION, defaultActionSelect.value);
     }
@@ -465,6 +468,11 @@
         defaultActionSelect.value = savedDefaultAction;
       }
 
+      if (localStorage.getItem(STORAGE_KEY_CLIPBOARD) === 'true') {
+        clipboardToggle.checked = true;
+      }
+      applyClipboardMode();
+
       const storedSort = localStorage.getItem(STORAGE_KEY_SORT);
       if (storedSort && ['custom', 'asc', 'desc'].includes(storedSort)) {
         sortSelect.value = storedSort;
@@ -550,9 +558,36 @@ cyperPunkToggle.addEventListener('change', () => {
       const isBatchActive = addBatchToggle.checked;
       batchInput.style.display = isBatchActive ? 'block' : 'none';
       batchSlash.style.display = isBatchActive ? 'inline-block' : 'none';
-      input.placeholder = isBatchActive ? 'Main Code...' : 'Type text, numbers, or URL...';
+      applyClipboardMode();
       updateClearButtonVisibility();
     });
+
+    // Clipboard mode: grey out the main input, codes come from the clipboard
+    function applyClipboardMode() {
+      const isClipboard = clipboardToggle.checked;
+      input.disabled = isClipboard;
+      input.placeholder = isClipboard
+        ? 'Using clipboard contents...'
+        : (addBatchToggle.checked ? 'Main Code...' : 'Type text, numbers, or URL...');
+    }
+
+    clipboardToggle.addEventListener('change', () => {
+      applyClipboardMode();
+      saveToLocalStorage();
+    });
+
+    async function readClipboardText() {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        alert('Your browser does not support reading the clipboard here. Untick "Clipboard" and paste instead.');
+        return null;
+      }
+      try {
+        return (await navigator.clipboard.readText()).trim();
+      } catch (err) {
+        alert('Could not read the clipboard. Please allow clipboard access for this page and try again.');
+        return null;
+      }
+    }
 
     function updateClearButtonVisibility() {
       const hasContent = input.value.trim() || (addBatchToggle.checked && batchInput.value.trim()) || descInput.value.trim();
@@ -883,8 +918,16 @@ cyperPunkToggle.addEventListener('change', () => {
       return true;
     }
 
-    function handleCreateCode(codeType) {
-      const mainVal = input.value.trim();
+    async function handleCreateCode(codeType) {
+      let mainVal = input.value.trim();
+      if (clipboardToggle.checked) {
+        mainVal = await readClipboardText();
+        if (mainVal === null) return;
+        if (!mainVal) {
+          alert('Your clipboard is empty. Copy some text first.');
+          return;
+        }
+      }
       const batchVal = batchInput.value.trim();
       
       let textValue = '';
@@ -899,7 +942,7 @@ cyperPunkToggle.addEventListener('change', () => {
       }
 
       if (!textValue) {
-        input.reportValidity();
+        if (!clipboardToggle.checked) input.reportValidity();
         return;
       }
 
@@ -918,7 +961,7 @@ cyperPunkToggle.addEventListener('change', () => {
       refreshGridDisplay();
       saveToLocalStorage();
 
-      input.focus();
+      if (!clipboardToggle.checked) input.focus();
     }
 
     function handleLoadFavorites() {

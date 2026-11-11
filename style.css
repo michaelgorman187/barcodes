@@ -276,6 +276,11 @@ body.punk-mode .pip { /* Included class fallback if you use one */
       transition: border-color 0.2s, background-color 0.25s;
     }
 
+    .input-wrapper input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .desc-input:focus,
     .input-wrapper input:focus {
       border-color: #0066cc;
